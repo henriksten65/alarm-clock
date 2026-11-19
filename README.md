@@ -5,7 +5,11 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 ## Features
 
 - List of alarms, sorted by time, with an on/off switch and delete button
-- Add / edit an alarm: time (system time picker), optional label, "repeat every day"
+- Add / edit an alarm: time, optional label, "repeat every day"
+- Settings (gear icon): choose how the time is entered — **Clock dial** (Material 3 time picker)
+  or **Keyboard**, where you type the digits on the number keypad (`630` → 6:30, `1845` → 18:45,
+  with an AM/PM switch on 12-hour phones). The **Typed times use 24-hour clock** switch makes
+  typed digits always 24-hour (no AM/PM), whatever the phone's time format
 - Exact alarms via `AlarmManager.setAlarmClock()` (ring on time even in Doze; shows the
   alarm icon in the status bar)
 - When an alarm rings: looping alarm sound + vibration from a foreground service,
@@ -36,6 +40,7 @@ All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgr
 app/src/main/java/com/example/alarmclock/
   Alarm.kt            data class + next-trigger calculation + JSON (de)serialisation
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
+  AppSettings.kt      user settings (time entry mode), SharedPreferences + StateFlow
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing
   AlarmReceiver.kt    fires when an alarm goes off; handles Snooze/Dismiss actions
   AlarmService.kt     foreground service: sound, vibration, ringing notification

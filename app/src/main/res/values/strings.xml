@@ -21,4 +21,15 @@
     <string name="schedule_failed">Couldn\'t schedule the alarm. Allow exact alarms in settings.</string>
     <string name="exact_alarm_needed">Allow exact alarms so your alarms ring on time.</string>
     <string name="allow">Allow</string>
+    <string name="settings">Settings</string>
+    <string name="done">Done</string>
+    <string name="time_entry">Time entry</string>
+    <string name="time_entry_dial">Clock dial</string>
+    <string name="time_entry_keyboard">Keyboard (type the digits)</string>
+    <string name="enter_time">Enter time</string>
+    <string name="keyboard_24_hour">Typed times use 24-hour clock</string>
+    <string name="type_time_hint">Type the digits, e.g. 630 or 1845</string>
+    <string name="invalid_time">Not a valid time</string>
+    <string name="am">AM</string>
+    <string name="pm">PM</string>
 </resources>

@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
         val repository = AlarmRepository.getInstance(this)
         setContent {
             AlarmClockTheme {
-                AlarmListScreen(repository)
+                AlarmListScreen(repository, AppSettings.getInstance(this))
             }
         }
     }

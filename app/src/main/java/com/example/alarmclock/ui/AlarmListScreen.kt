@@ -14,14 +14,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,6 +38,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
@@ -57,17 +62,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.alarmclock.Alarm
 import com.example.alarmclock.AlarmRepository
 import com.example.alarmclock.AlarmScheduler
+import com.example.alarmclock.AppSettings
 import com.example.alarmclock.R
+import com.example.alarmclock.TimeEntryMode
 import com.example.alarmclock.formatTime
 import com.example.alarmclock.timeUntilText
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlarmListScreen(repository: AlarmRepository) {
+fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     val context = LocalContext.current
     val alarms by repository.alarms.collectAsStateWithLifecycle()
+    val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
+    val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Alarm?>(null) }
+    var showSettings by remember { mutableStateOf(false) }
     var canScheduleExact by remember { mutableStateOf(AlarmScheduler.canScheduleExactAlarms(context)) }
 
     // Re-check the permission when returning from the system settings screen.
@@ -88,7 +98,16 @@ fun AlarmListScreen(repository: AlarmRepository) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
+                    }
+                },
+            )
+        },
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 val now = Calendar.getInstance()
@@ -152,6 +171,8 @@ fun AlarmListScreen(repository: AlarmRepository) {
         EditAlarmDialog(
             initial = alarm,
             isNew = repository.get(alarm.id) == null,
+            timeEntryMode = timeEntryMode,
+            keyboard24Hour = keyboard24Hour,
             onDismiss = { editing = null },
             onSave = {
                 enableAndSchedule(it)
@@ -159,6 +180,85 @@ fun AlarmListScreen(repository: AlarmRepository) {
             },
         )
     }
+
+    if (showSettings) {
+        SettingsDialog(
+            timeEntryMode = timeEntryMode,
+            onTimeEntryModeChange = settings::setTimeEntryMode,
+            keyboard24Hour = keyboard24Hour,
+            onKeyboard24HourChange = settings::setKeyboard24Hour,
+            onDismiss = { showSettings = false },
+        )
+    }
+}
+
+@Composable
+private fun SettingsDialog(
+    timeEntryMode: TimeEntryMode,
+    onTimeEntryModeChange: (TimeEntryMode) -> Unit,
+    keyboard24Hour: Boolean,
+    onKeyboard24HourChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.settings)) },
+        text = {
+            Column(Modifier.selectableGroup()) {
+                Text(
+                    stringResource(R.string.time_entry),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                listOf(
+                    TimeEntryMode.DIAL to R.string.time_entry_dial,
+                    TimeEntryMode.KEYBOARD to R.string.time_entry_keyboard,
+                ).forEach { (mode, labelRes) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                            .selectable(
+                                selected = mode == timeEntryMode,
+                                role = Role.RadioButton,
+                                onClick = { onTimeEntryModeChange(mode) },
+                            ),
+                    ) {
+                        RadioButton(selected = mode == timeEntryMode, onClick = null)
+                        Spacer(Modifier.width(12.dp))
+                        Text(stringResource(labelRes))
+                    }
+                }
+                // Only meaningful for typed times, so it's greyed out while the dial is chosen.
+                val keyboardMode = timeEntryMode == TimeEntryMode.KEYBOARD
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .padding(start = 36.dp)
+                        .toggleable(
+                            value = keyboard24Hour,
+                            enabled = keyboardMode,
+                            role = Role.Switch,
+                            onValueChange = onKeyboard24HourChange,
+                        ),
+                ) {
+                    Text(
+                        stringResource(R.string.keyboard_24_hour),
+                        modifier = Modifier.weight(1f),
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (keyboardMode) 1f else 0.38f),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Switch(checked = keyboard24Hour, onCheckedChange = null, enabled = keyboardMode)
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
+        },
+    )
 }
 
 @Composable
@@ -213,6 +313,8 @@ private fun AlarmCard(
 private fun EditAlarmDialog(
     initial: Alarm,
     isNew: Boolean,
+    timeEntryMode: TimeEntryMode,
+    keyboard24Hour: Boolean,
     onDismiss: () -> Unit,
     onSave: (Alarm) -> Unit,
 ) {
@@ -266,16 +368,15 @@ private fun EditAlarmDialog(
     )
 
     if (pickingTime) {
-        TimePickerDialog(
-            initialHour = hour,
-            initialMinute = minute,
-            onDismiss = { pickingTime = false },
-            onConfirm = { h, m ->
-                hour = h
-                minute = m
-                pickingTime = false
-            },
-        )
+        val onConfirm = { h: Int, m: Int ->
+            hour = h
+            minute = m
+            pickingTime = false
+        }
+        when (timeEntryMode) {
+            TimeEntryMode.DIAL -> TimePickerDialog(hour, minute, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
+            TimeEntryMode.KEYBOARD -> KeyboardTimeDialog(hour, minute, keyboard24Hour, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
+        }
     }
 }
 
