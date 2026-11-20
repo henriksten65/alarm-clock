@@ -2,7 +2,10 @@ package com.example.alarmclock
 
 import android.content.Context
 import android.text.format.DateFormat
+import java.time.DayOfWeek
+import java.time.format.TextStyle
 import java.util.Calendar
+import java.util.Locale
 
 /** Formats a time using the device's 12/24-hour preference. */
 fun formatTime(context: Context, hour: Int, minute: Int): String {
@@ -16,8 +19,37 @@ fun formatTime(context: Context, hour: Int, minute: Int): String {
 fun formatTime(context: Context, millis: Long): String =
     DateFormat.getTimeFormat(context).format(millis)
 
-/** "Alarm set for 7 h 30 min from now" */
+/** "Alarm set for 7 h 30 min from now", or "… for 2 days 7 h 30 min …" when further away. */
 fun timeUntilText(context: Context, triggerAtMillis: Long): String {
     val totalMinutes = ((triggerAtMillis - System.currentTimeMillis() + 59_999L) / 60_000L).toInt()
-    return context.getString(R.string.alarm_set_in, totalMinutes / 60, totalMinutes % 60)
+    val days = totalMinutes / (24 * 60)
+    val hours = totalMinutes / 60 % 24
+    val minutes = totalMinutes % 60
+    return if (days == 0) {
+        context.getString(R.string.alarm_set_in, hours, minutes)
+    } else {
+        context.resources.getQuantityString(R.plurals.alarm_set_in_days, days, days, hours, minutes)
+    }
+}
+
+/** The seven [Calendar] day constants, starting with the locale's first day of the week. */
+fun weekDaysInLocaleOrder(): List<Int> {
+    val first = Calendar.getInstance().firstDayOfWeek
+    return List(7) { (first - 1 + it) % 7 + 1 }
+}
+
+/** Day name for a [Calendar] day constant, e.g. "Mon" ([TextStyle.SHORT]) or "M" ([TextStyle.NARROW]). */
+fun dayName(calendarDay: Int, style: TextStyle): String =
+    // Calendar: Sunday = 1 … Saturday = 7; DayOfWeek: Monday = 1 … Sunday = 7.
+    DayOfWeek.of((calendarDay + 5) % 7 + 1).getDisplayName(style, Locale.getDefault())
+
+/** "Once", "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri". */
+fun repeatText(context: Context, days: Int): String = when (days) {
+    0 -> context.getString(R.string.once)
+    Alarm.EVERY_DAY -> context.getString(R.string.every_day)
+    Alarm.WEEKDAYS -> context.getString(R.string.weekdays)
+    Alarm.WEEKEND -> context.getString(R.string.weekends)
+    else -> weekDaysInLocaleOrder()
+        .filter { days and Alarm.dayBit(it) != 0 }
+        .joinToString(", ") { dayName(it, TextStyle.SHORT) }
 }

@@ -79,7 +79,10 @@ class AlarmService : Service() {
 
     private fun startRinging() {
         if (player == null) {
+            // The user's chosen sound first; fall back to the system defaults if it can't be played
+            // (e.g. the audio file was deleted).
             player = listOfNotNull(
+                AppSettings.getInstance(this).alarmSoundUri.value?.let(Uri::parse),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),

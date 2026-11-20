@@ -41,10 +41,20 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putBoolean(KEY_KEYBOARD_24_HOUR, enabled) }
     }
 
+    /** Sound played when an alarm rings: a ringtone or audio-file URI, or null for the default alarm sound. */
+    private val _alarmSoundUri = MutableStateFlow(prefs.getString(KEY_ALARM_SOUND, null))
+    val alarmSoundUri: StateFlow<String?> = _alarmSoundUri.asStateFlow()
+
+    fun setAlarmSoundUri(uri: String?) {
+        _alarmSoundUri.value = uri
+        prefs.edit { putString(KEY_ALARM_SOUND, uri) }
+    }
+
     companion object {
         private const val PREFS_NAME = "settings"
         private const val KEY_TIME_ENTRY_MODE = "time_entry_mode"
         private const val KEY_KEYBOARD_24_HOUR = "keyboard_24_hour"
+        private const val KEY_ALARM_SOUND = "alarm_sound_uri"
 
         @Volatile
         private var instance: AppSettings? = null

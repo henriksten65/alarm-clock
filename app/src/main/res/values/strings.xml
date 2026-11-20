@@ -6,9 +6,11 @@
     <string name="edit_alarm">Edit alarm</string>
     <string name="delete_alarm">Delete alarm</string>
     <string name="label">Label</string>
-    <string name="repeat_daily">Repeat every day</string>
+    <string name="repeat">Repeat</string>
     <string name="every_day">Every day</string>
     <string name="once">Once</string>
+    <string name="weekdays">Weekdays</string>
+    <string name="weekends">Weekends</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
@@ -18,6 +20,10 @@
     <string name="dismiss">Dismiss</string>
     <string name="channel_name">Ringing alarms</string>
     <string name="alarm_set_in">Alarm set for %1$d h %2$d min from now</string>
+    <plurals name="alarm_set_in_days">
+        <item quantity="one">Alarm set for %1$d day %2$d h %3$d min from now</item>
+        <item quantity="other">Alarm set for %1$d days %2$d h %3$d min from now</item>
+    </plurals>
     <string name="schedule_failed">Couldn\'t schedule the alarm. Allow exact alarms in settings.</string>
     <string name="exact_alarm_needed">Allow exact alarms so your alarms ring on time.</string>
     <string name="allow">Allow</string>
@@ -32,4 +38,8 @@
     <string name="invalid_time">Not a valid time</string>
     <string name="am">AM</string>
     <string name="pm">PM</string>
+    <string name="alarm_sound">Alarm sound</string>
+    <string name="default_alarm_sound">Default alarm sound</string>
+    <string name="phone_sounds">Phone sounds</string>
+    <string name="audio_file">Audio file</string>
 </resources>

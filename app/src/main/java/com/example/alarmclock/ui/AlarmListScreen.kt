@@ -1,11 +1,16 @@
 package com.example.alarmclock.ui
 
+import android.app.Activity
 import android.content.Intent
+import android.media.RingtoneManager
+import android.net.Uri
 import androidx.core.net.toUri
 import android.os.Build
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +23,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -29,12 +36,13 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -57,15 +65,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.content.IntentCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.alarmclock.Alarm
 import com.example.alarmclock.AlarmRepository
 import com.example.alarmclock.AlarmScheduler
+import com.example.alarmclock.AlarmSound
 import com.example.alarmclock.AppSettings
 import com.example.alarmclock.R
 import com.example.alarmclock.TimeEntryMode
 import com.example.alarmclock.formatTime
+import com.example.alarmclock.repeatText
 import com.example.alarmclock.timeUntilText
 import java.util.Calendar
 
@@ -187,6 +198,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
             onTimeEntryModeChange = settings::setTimeEntryMode,
             keyboard24Hour = keyboard24Hour,
             onKeyboard24HourChange = settings::setKeyboard24Hour,
+            settings = settings,
             onDismiss = { showSettings = false },
         )
     }
@@ -198,13 +210,31 @@ private fun SettingsDialog(
     onTimeEntryModeChange: (TimeEntryMode) -> Unit,
     keyboard24Hour: Boolean,
     onKeyboard24HourChange: (Boolean) -> Unit,
+    settings: AppSettings,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val alarmSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
+    val soundTitle = remember(alarmSoundUri) { AlarmSound.title(context, alarmSoundUri) }
+
+    // One of the phone's alarm sounds, via the system sound picker.
+    val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val uri = IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+        AlarmSound.choose(context, settings, uri)
+    }
+    // Any audio file on the phone, via the document picker.
+    val pickAudioFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) AlarmSound.choose(context, settings, uri)
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings)) },
         text = {
-            Column(Modifier.selectableGroup()) {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+              Column(Modifier.selectableGroup()) {
                 Text(
                     stringResource(R.string.time_entry),
                     style = MaterialTheme.typography.titleSmall,
@@ -253,6 +283,24 @@ private fun SettingsDialog(
                     Spacer(Modifier.width(12.dp))
                     Switch(checked = keyboard24Hour, onCheckedChange = null, enabled = keyboardMode)
                 }
+              }
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                Text(
+                    stringResource(R.string.alarm_sound),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Text(soundTitle, style = MaterialTheme.typography.bodyLarge)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    OutlinedButton(onClick = { pickSystemSound.launch(AlarmSound.pickerIntent(context, alarmSoundUri)) }) {
+                        Text(stringResource(R.string.phone_sounds))
+                    }
+                    OutlinedButton(onClick = { pickAudioFile.launch(arrayOf("audio/*")) }) {
+                        Text(stringResource(R.string.audio_file))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -283,8 +331,7 @@ private fun AlarmCard(
 ) {
     val context = LocalContext.current
     val contentAlpha = if (alarm.enabled) 1f else 0.5f
-    val repeatText = stringResource(if (alarm.repeatDaily) R.string.every_day else R.string.once)
-    val subtitle = listOf(alarm.label, repeatText).filter { it.isNotBlank() }.joinToString(" · ")
+    val subtitle = listOf(alarm.label, repeatText(context, alarm.days)).filter { it.isNotBlank() }.joinToString(" · ")
 
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -322,7 +369,7 @@ private fun EditAlarmDialog(
     var hour by remember(initial.id) { mutableIntStateOf(initial.hour) }
     var minute by remember(initial.id) { mutableIntStateOf(initial.minute) }
     var label by remember(initial.id) { mutableStateOf(initial.label) }
-    var repeatDaily by remember(initial.id) { mutableStateOf(initial.repeatDaily) }
+    var days by remember(initial.id) { mutableIntStateOf(initial.days) }
 
     var pickingTime by remember { mutableStateOf(false) }
 
@@ -341,25 +388,20 @@ private fun EditAlarmDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .toggleable(
-                            value = repeatDaily,
-                            role = Role.Checkbox,
-                            onValueChange = { repeatDaily = it },
-                        ),
-                ) {
-                    Checkbox(checked = repeatDaily, onCheckedChange = null)
-                    Spacer(Modifier.width(12.dp))
-                    Text(stringResource(R.string.repeat_daily))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.repeat), style = MaterialTheme.typography.titleSmall)
+                    DaySelector(days = days, onDaysChange = { days = it })
+                    Text(
+                        repeatText(context, days),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(initial.copy(hour = hour, minute = minute, label = label.trim(), repeatDaily = repeatDaily))
+                onSave(initial.copy(hour = hour, minute = minute, label = label.trim(), days = days))
             }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {

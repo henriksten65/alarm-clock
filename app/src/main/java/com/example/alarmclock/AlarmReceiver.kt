@@ -22,8 +22,8 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarm = repository.get(alarmId) ?: return
         if (!alarm.enabled) return
 
-        if (alarm.repeatDaily) {
-            // Schedule tomorrow's occurrence (offset by a minute so we never re-pick today).
+        if (alarm.repeats) {
+            // Schedule the next selected day (offset by a minute so we never re-pick this occurrence).
             AlarmScheduler.schedule(context, alarm, alarm.nextTriggerMillis(System.currentTimeMillis() + 60_000L))
         } else {
             repository.upsert(alarm.copy(enabled = false))
