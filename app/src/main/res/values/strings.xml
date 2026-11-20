@@ -19,6 +19,9 @@
     <string name="snooze_minutes">Snooze %1$d min</string>
     <string name="dismiss">Dismiss</string>
     <string name="channel_name">Ringing alarms</string>
+    <string name="missed_channel_name">Missed alarms</string>
+    <string name="missed_alarm">Missed alarm: %1$s</string>
+    <string name="missed_alarm_text">Rang for %1$d minutes without being dismissed</string>
     <string name="alarm_set_in">Alarm set for %1$d h %2$d min from now</string>
     <plurals name="alarm_set_in_days">
         <item quantity="one">Alarm set for %1$d day %2$d h %3$d min from now</item>

@@ -20,7 +20,7 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 - When an alarm rings: looping alarm sound + vibration from a foreground service,
   a full-screen ring screen (also over the lock screen), and a notification with
   **Snooze** (10 min) and **Dismiss**
-- Rings stop automatically after 10 minutes
+- Rings stop automatically after 10 minutes, followed by a "Missed alarm: 06:15 · Label" notification
 - One-time alarms switch themselves off after ringing; repeating alarms reschedule for the next selected day
 - Alarms are re-registered after reboot, app update, and time / time-zone changes — and they
   ring even if the phone restarted and hasn't been unlocked yet (Direct Boot: alarm data lives in

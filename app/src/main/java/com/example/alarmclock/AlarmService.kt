@@ -34,7 +34,12 @@ class AlarmService : Service() {
     private var player: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private val handler = Handler(Looper.getMainLooper())
-    private val autoStop = Runnable { stopSelf() }
+    /** True when the alarm stopped by itself after ringing [AUTO_STOP_MILLIS] without Dismiss/Snooze. */
+    private var timedOut = false
+    private val autoStop = Runnable {
+        timedOut = true
+        stopSelf()
+    }
 
     private val alarmAudioAttributes: AudioAttributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_ALARM)
@@ -70,6 +75,7 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(autoStop)
+        if (timedOut) _ringingAlarmId.value?.let { notifyMissed(it) }
         player?.run {
             stop()
             release()
@@ -152,6 +158,34 @@ class AlarmService : Service() {
             .build()
     }
 
+    /** "Missed alarm · 06:15 Work" – posted when an alarm rang out without being dismissed. */
+    private fun notifyMissed(alarmId: Int) {
+        val alarm = AlarmRepository.getInstance(this).get(alarmId)
+        val time = alarm?.let { formatTime(this, it.hour, it.minute) }.orEmpty()
+        val what = listOfNotNull(time.ifEmpty { null }, alarm?.label?.takeIf { it.isNotBlank() }).joinToString(" · ")
+        val openApp = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(this, MISSED_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_alarm)
+            .setContentTitle(getString(R.string.missed_alarm, what))
+            .setContentText(getString(R.string.missed_alarm_text, AUTO_STOP_MILLIS / 60_000L))
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+            .setContentIntent(openApp)
+            .setAutoCancel(true)
+            .build()
+        try {
+            NotificationManagerCompat.from(this).notify(MISSED_NOTIFICATION_ID_BASE + alarmId, notification)
+        } catch (e: SecurityException) {
+            // Notifications are off; the app already shows a banner about that.
+        }
+    }
+
     private fun actionIntent(action: String, alarmId: Int): PendingIntent =
         PendingIntent.getBroadcast(
             this,
@@ -169,15 +203,21 @@ class AlarmService : Service() {
         /** The id of the alarm that is ringing right now, or null. */
         val ringingAlarmId: StateFlow<Int?> = _ringingAlarmId.asStateFlow()
 
-        /** Creates the ringing notification channel (safe to call repeatedly). */
+        /** Creates the notification channels (safe to call repeatedly). */
         fun createNotificationChannel(context: Context) {
-            val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
+            val ringing = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
                 .setName(context.getString(R.string.channel_name))
                 .setSound(null, null) // The service plays the sound itself.
                 .setVibrationEnabled(false)
                 .build()
-            NotificationManagerCompat.from(context).createNotificationChannel(channel)
+            val missed = NotificationChannelCompat.Builder(MISSED_CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
+                .setName(context.getString(R.string.missed_channel_name))
+                .build()
+            NotificationManagerCompat.from(context).createNotificationChannelsCompat(listOf(ringing, missed))
         }
+
+        private const val MISSED_CHANNEL_ID = "missed_alarms"
+        private const val MISSED_NOTIFICATION_ID_BASE = 1000
 
         private const val NOTIFICATION_ID = 1
         private const val AUTO_STOP_MILLIS = 10 * 60_000L
