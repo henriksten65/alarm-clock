@@ -50,6 +50,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -63,6 +67,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +93,10 @@ import com.example.alarmclock.formatTime
 import com.example.alarmclock.repeatText
 import com.example.alarmclock.timeUntilText
 import java.util.Calendar
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+
+private const val UNDO_TIMEOUT_MILLIS = 15_000L
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,6 +142,9 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
         onDispose { context.unregisterReceiver(receiver) }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     fun stopIfRinging(alarmId: Int) {
         if (ringingAlarmId == alarmId) AlarmScheduler.stopRinging(context)
     }
@@ -149,6 +161,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
@@ -239,6 +252,24 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                                 AlarmScheduler.cancel(context, alarm.id)
                                 repository.delete(alarm.id)
                                 stopIfRinging(alarm.id)
+                                scope.launch {
+                                    snackbarHostState.currentSnackbarData?.dismiss()
+                                    // Up for 15 s (a little longer than the standard "long" 10 s);
+                                    // cancelling showSnackbar on timeout removes it.
+                                    val result = withTimeoutOrNull(UNDO_TIMEOUT_MILLIS) {
+                                        snackbarHostState.showSnackbar(
+                                            message = context.getString(R.string.alarm_deleted),
+                                            actionLabel = context.getString(R.string.undo),
+                                            withDismissAction = true,
+                                            duration = SnackbarDuration.Indefinite,
+                                        )
+                                    }
+                                    if (result == SnackbarResult.ActionPerformed) {
+                                        // Restore exactly as it was, including on/off and any snooze.
+                                        repository.upsert(alarm)
+                                        if (alarm.enabled) AlarmScheduler.schedule(context, alarm)
+                                    }
+                                }
                             },
                         )
                     }

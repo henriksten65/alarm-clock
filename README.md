@@ -4,7 +4,7 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 
 ## Features
 
-- List of alarms, sorted by time, with an on/off switch and delete button
+- List of alarms, sorted by time, with an on/off switch and delete button (**Undo** for 15 s after deleting)
 - Add / edit an alarm: time, optional label, and the weekdays it repeats on (none = rings once;
   the list shows "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri")
 - Settings (gear icon): choose how the time is entered — **Clock dial** (Material 3 time picker)

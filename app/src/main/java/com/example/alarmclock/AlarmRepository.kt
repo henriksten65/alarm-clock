@@ -20,8 +20,16 @@ class AlarmRepository private constructor(context: Context) {
 
     fun get(id: Int): Alarm? = _alarms.value.firstOrNull { it.id == id }
 
+    /**
+     * A new, never-used alarm id. Ids aren't reused after a delete, so "Undo" on a deleted
+     * alarm can't collide with an alarm created in the meantime.
+     */
     @Synchronized
-    fun nextId(): Int = (_alarms.value.maxOfOrNull { it.id } ?: 0) + 1
+    fun nextId(): Int {
+        val id = maxOf(prefs.getInt(KEY_LAST_ID, 0), _alarms.value.maxOfOrNull { it.id } ?: 0) + 1
+        prefs.edit { putInt(KEY_LAST_ID, id) }
+        return id
+    }
 
     @Synchronized
     fun upsert(alarm: Alarm) = save(_alarms.value.filterNot { it.id == alarm.id } + alarm)
@@ -48,6 +56,7 @@ class AlarmRepository private constructor(context: Context) {
     companion object {
         private const val PREFS_NAME = "alarms"
         private const val KEY_ALARMS = "alarms"
+        private const val KEY_LAST_ID = "last_id"
         private val ORDER = compareBy<Alarm>({ it.hour }, { it.minute }, { it.id })
 
         @Volatile
