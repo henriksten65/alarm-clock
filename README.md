@@ -21,7 +21,17 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   **Snooze** (10 min) and **Dismiss**
 - Rings stop automatically after 10 minutes
 - One-time alarms switch themselves off after ringing; repeating alarms reschedule for the next selected day
-- Alarms are re-registered after reboot, app update, and time / time-zone changes
+- Alarms are re-registered after reboot, app update, and time / time-zone changes — and they
+  ring even if the phone restarted and hasn't been unlocked yet (Direct Boot: alarm data lives in
+  device-protected storage; a built-in fallback sound plays if the chosen one can't be read yet)
+- Snooze is shown on the alarm ("Snoozed until 06:25") with **Cancel snooze**, and survives a
+  reboot, app update or time change
+- While an alarm rings, the app shows a **Ringing** card with Dismiss/Snooze, and opening the app
+  goes to the ring screen — so an alarm can always be stopped, even with notifications off.
+  Switching a ringing alarm off, or deleting it, also stops it
+- Warning banners (with a button to fix it) when something would stop alarms from being seen or
+  heard: exact alarms not allowed, notifications off, full-screen alerts off (Android 14+),
+  alarm volume at its lowest, Do Not Disturb silencing alarms
 
 ## Opening the project
 
@@ -46,6 +56,8 @@ app/src/main/java/com/example/alarmclock/
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
   AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound), SharedPreferences + StateFlow
   AlarmSound.kt       alarm sound picker intent, display name, persisting file access
+  AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
+  Storage.kt          device-protected SharedPreferences (Direct Boot) + migration
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing
   AlarmReceiver.kt    fires when an alarm goes off; handles Snooze/Dismiss actions
   AlarmService.kt     foreground service: sound, vibration, ringing notification

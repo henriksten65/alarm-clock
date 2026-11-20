@@ -15,7 +15,7 @@ object AlarmScheduler {
     fun schedule(
         context: Context,
         alarm: Alarm,
-        triggerAtMillis: Long = alarm.nextTriggerMillis(),
+        triggerAtMillis: Long = alarm.nextRingMillis(),
     ): Boolean {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         // Shown by the system (e.g. in the status bar / lock screen); opens the app when tapped.
@@ -40,11 +40,24 @@ object AlarmScheduler {
         context.getSystemService(AlarmManager::class.java).cancel(firePendingIntent(context, alarmId))
     }
 
-    /** Re-registers all enabled alarms, e.g. after reboot or a time zone change. */
+    /**
+     * Re-registers all enabled alarms, e.g. after reboot or a time zone change. A snooze that is
+     * still in the future is kept; one that already passed (phone was off) is dropped.
+     */
     fun rescheduleAll(context: Context) {
-        AlarmRepository.getInstance(context).alarms.value
-            .filter { it.enabled }
-            .forEach { schedule(context, it) }
+        val repository = AlarmRepository.getInstance(context)
+        val now = System.currentTimeMillis()
+        repository.alarms.value.filter { it.enabled }.forEach { alarm ->
+            when {
+                alarm.snoozedUntil == 0L || alarm.isSnoozed(now) -> schedule(context, alarm)
+                alarm.repeats -> alarm.copy(snoozedUntil = 0L).also {
+                    repository.upsert(it)
+                    schedule(context, it)
+                }
+                // A one-time alarm whose snooze was missed: it has rung already, so switch it off.
+                else -> repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+            }
+        }
     }
 
     fun canScheduleExactAlarms(context: Context): Boolean =
@@ -59,11 +72,29 @@ object AlarmScheduler {
         val repository = AlarmRepository.getInstance(context)
         repository.get(alarmId)?.let { alarm ->
             // Keep the alarm enabled while snoozed so the user can cancel the snooze with the switch.
-            val updated = alarm.copy(enabled = true)
+            val until = System.currentTimeMillis() + SNOOZE_MINUTES * 60_000L
+            val updated = alarm.copy(enabled = true, snoozedUntil = until)
             repository.upsert(updated)
-            schedule(context, updated, System.currentTimeMillis() + SNOOZE_MINUTES * 60_000L)
+            schedule(context, updated, until)
         }
         stopRinging(context)
+    }
+
+    /**
+     * Cancels a pending snooze. A repeating alarm goes back to its regular schedule;
+     * a one-time alarm (which has already rung) is switched off.
+     */
+    fun cancelSnooze(context: Context, alarmId: Int) {
+        val repository = AlarmRepository.getInstance(context)
+        val alarm = repository.get(alarmId) ?: return
+        if (alarm.repeats) {
+            val updated = alarm.copy(snoozedUntil = 0L)
+            repository.upsert(updated)
+            schedule(context, updated)
+        } else {
+            repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+            cancel(context, alarmId)
+        }
     }
 
     fun stopRinging(context: Context) {

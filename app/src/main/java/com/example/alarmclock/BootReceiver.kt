@@ -16,6 +16,9 @@ class BootReceiver : BroadcastReceiver() {
 
     private companion object {
         val HANDLED_ACTIONS = setOf(
+            // Delivered right after boot, before the user unlocks (we're directBootAware);
+            // BOOT_COMPLETED follows after the first unlock.
+            Intent.ACTION_LOCKED_BOOT_COMPLETED,
             Intent.ACTION_BOOT_COMPLETED,
             Intent.ACTION_MY_PACKAGE_REPLACED,
             Intent.ACTION_TIME_CHANGED,

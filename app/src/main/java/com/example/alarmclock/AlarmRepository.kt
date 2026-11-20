@@ -14,7 +14,7 @@ import org.json.JSONException
  */
 class AlarmRepository private constructor(context: Context) {
 
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs = deviceProtectedPrefs(context, PREFS_NAME)
     private val _alarms = MutableStateFlow(load())
     val alarms: StateFlow<List<Alarm>> = _alarms.asStateFlow()
 

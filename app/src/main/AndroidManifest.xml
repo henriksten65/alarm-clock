@@ -33,9 +33,13 @@
             </intent-filter>
         </activity>
 
+        <!-- The alarm components below are directBootAware: after a reboot they run before the
+             phone is unlocked, so alarms still ring (data lives in device-protected storage). -->
+
         <!-- Full-screen screen shown while an alarm is ringing (also over the lock screen). -->
         <activity
             android:name=".RingActivity"
+            android:directBootAware="true"
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop"
@@ -43,17 +47,21 @@
 
         <service
             android:name=".AlarmService"
+            android:directBootAware="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
         <receiver
             android:name=".AlarmReceiver"
+            android:directBootAware="true"
             android:exported="false" />
 
         <receiver
             android:name=".BootReceiver"
+            android:directBootAware="true"
             android:exported="false">
             <intent-filter>
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.TIME_SET" />

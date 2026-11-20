@@ -27,6 +27,15 @@
     <string name="schedule_failed">Couldn\'t schedule the alarm. Allow exact alarms in settings.</string>
     <string name="exact_alarm_needed">Allow exact alarms so your alarms ring on time.</string>
     <string name="allow">Allow</string>
+    <string name="open_settings">Settings</string>
+    <string name="turn_up">Turn up</string>
+    <string name="notifications_blocked">Notifications are off. A ringing alarm can\'t show its Snooze/Dismiss buttons or ring screen.</string>
+    <string name="full_screen_blocked">Allow full-screen alerts so the ring screen can appear over the lock screen.</string>
+    <string name="alarm_volume_low">Alarm volume is at its lowest. You may not hear your alarms.</string>
+    <string name="dnd_blocks_alarms">Do Not Disturb is silencing alarms.</string>
+    <string name="ringing_now">Ringing: %1$s</string>
+    <string name="snoozed_until">Snoozed until %1$s</string>
+    <string name="cancel_snooze">Cancel snooze</string>
     <string name="settings">Settings</string>
     <string name="done">Done</string>
     <string name="time_entry">Time entry</string>

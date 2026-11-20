@@ -11,6 +11,8 @@ const val EXTRA_ALARM_ID = "com.example.alarmclock.EXTRA_ALARM_ID"
  * [days] is a bit set of the weekdays the alarm repeats on: bit `d - 1` for each
  * [Calendar] day constant `d` ([Calendar.SUNDAY] = 1 … [Calendar.SATURDAY] = 7).
  * 0 means a one-time alarm.
+ *
+ * [snoozedUntil] is the epoch millis a snoozed alarm will ring again, or 0 if not snoozed.
  */
 data class Alarm(
     val id: Int,
@@ -19,8 +21,15 @@ data class Alarm(
     val label: String = "",
     val enabled: Boolean = true,
     val days: Int = 0,
+    val snoozedUntil: Long = 0L,
 ) {
     val repeats: Boolean get() = days != 0
+
+    fun isSnoozed(nowMillis: Long = System.currentTimeMillis()): Boolean = snoozedUntil > nowMillis
+
+    /** When this alarm will ring next: the snooze time if snoozed, otherwise the regular time. */
+    fun nextRingMillis(nowMillis: Long = System.currentTimeMillis()): Long =
+        if (isSnoozed(nowMillis)) snoozedUntil else nextTriggerMillis(nowMillis)
 
     fun isOnDay(calendarDay: Int): Boolean = days and dayBit(calendarDay) != 0
 
@@ -48,6 +57,7 @@ data class Alarm(
         .put("label", label)
         .put("enabled", enabled)
         .put("days", days)
+        .put("snoozedUntil", snoozedUntil)
 
     companion object {
         const val EVERY_DAY = 0b1111111
@@ -71,6 +81,7 @@ data class Alarm(
             } else {
                 0
             },
+            snoozedUntil = json.optLong("snoozedUntil", 0L),
         )
     }
 }

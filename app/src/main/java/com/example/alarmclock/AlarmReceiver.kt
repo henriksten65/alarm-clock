@@ -22,11 +22,14 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarm = repository.get(alarmId) ?: return
         if (!alarm.enabled) return
 
+        // Ringing now, so any snooze is used up.
         if (alarm.repeats) {
+            val updated = alarm.copy(snoozedUntil = 0L)
+            repository.upsert(updated)
             // Schedule the next selected day (offset by a minute so we never re-pick this occurrence).
-            AlarmScheduler.schedule(context, alarm, alarm.nextTriggerMillis(System.currentTimeMillis() + 60_000L))
+            AlarmScheduler.schedule(context, updated, updated.nextTriggerMillis(System.currentTimeMillis() + 60_000L))
         } else {
-            repository.upsert(alarm.copy(enabled = false))
+            repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
         }
 
         // Alarms set with setAlarmClock() are allowed to start a foreground service from the background.

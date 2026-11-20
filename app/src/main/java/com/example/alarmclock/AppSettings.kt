@@ -18,7 +18,7 @@ enum class TimeEntryMode {
 /** User preferences, stored in SharedPreferences and exposed as [StateFlow]s for the UI. */
 class AppSettings private constructor(context: Context) {
 
-    private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs = deviceProtectedPrefs(context, PREFS_NAME)
 
     private val _timeEntryMode = MutableStateFlow(
         prefs.getString(KEY_TIME_ENTRY_MODE, null)

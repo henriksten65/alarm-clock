@@ -3,6 +3,7 @@ package com.example.alarmclock
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.media.AudioAttributes
@@ -20,6 +21,9 @@ import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Foreground service that plays the alarm sound and vibrates while an alarm is ringing.
@@ -42,8 +46,9 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
         val alarm = AlarmRepository.getInstance(this).get(alarmId)
+        _ringingAlarmId.value = alarmId
 
-        createNotificationChannel()
+        createNotificationChannel(this)
         ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
@@ -72,6 +77,7 @@ class AlarmService : Service() {
         player = null
         vibrator?.cancel()
         vibrator = null
+        _ringingAlarmId.value = null
         // Tell RingActivity (if showing) to close.
         sendBroadcast(Intent(ACTION_ALARM_STOPPED).setPackage(packageName))
         super.onDestroy()
@@ -86,6 +92,9 @@ class AlarmService : Service() {
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
+                // Built into the app, so it plays even right after a reboot before the phone is
+                // unlocked, when the user's audio files and the system default can't be read.
+                Uri.parse("android.resource://$packageName/${R.raw.fallback_alarm}"),
             ).firstNotNullOfOrNull { createPlayer(it) }
         }
         if (vibrator == null) {
@@ -114,15 +123,6 @@ class AlarmService : Service() {
             mediaPlayer.release()
             null
         }
-    }
-
-    private fun createNotificationChannel() {
-        val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
-            .setName(getString(R.string.channel_name))
-            .setSound(null, null) // The service plays the sound itself.
-            .setVibrationEnabled(false)
-            .build()
-        NotificationManagerCompat.from(this).createNotificationChannel(channel)
     }
 
     private fun buildNotification(alarmId: Int, alarm: Alarm?): Notification {
@@ -162,7 +162,23 @@ class AlarmService : Service() {
 
     companion object {
         const val ACTION_ALARM_STOPPED = "com.example.alarmclock.action.ALARM_STOPPED"
-        private const val CHANNEL_ID = "ringing_alarms"
+        const val CHANNEL_ID = "ringing_alarms"
+
+        private val _ringingAlarmId = MutableStateFlow<Int?>(null)
+
+        /** The id of the alarm that is ringing right now, or null. */
+        val ringingAlarmId: StateFlow<Int?> = _ringingAlarmId.asStateFlow()
+
+        /** Creates the ringing notification channel (safe to call repeatedly). */
+        fun createNotificationChannel(context: Context) {
+            val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_HIGH)
+                .setName(context.getString(R.string.channel_name))
+                .setSound(null, null) // The service plays the sound itself.
+                .setVibrationEnabled(false)
+                .build()
+            NotificationManagerCompat.from(context).createNotificationChannel(channel)
+        }
+
         private const val NOTIFICATION_ID = 1
         private const val AUTO_STOP_MILLIS = 10 * 60_000L
     }
