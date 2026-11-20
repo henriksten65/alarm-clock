@@ -64,6 +64,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -89,10 +90,13 @@ import com.example.alarmclock.AlarmSound
 import com.example.alarmclock.AppSettings
 import com.example.alarmclock.R
 import com.example.alarmclock.TimeEntryMode
+import com.example.alarmclock.dayAndTimeText
 import com.example.alarmclock.formatTime
+import com.example.alarmclock.timeUntilShortText
 import com.example.alarmclock.repeatText
 import com.example.alarmclock.timeUntilText
 import java.util.Calendar
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -220,6 +224,8 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                     recheck()
                 }
             }
+
+            if (alarms.isNotEmpty()) NextAlarmSummary(alarms)
 
             if (alarms.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -406,6 +412,37 @@ private fun SettingsDialog(
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
         },
+    )
+}
+
+/** "Next alarm: tomorrow 07:30 · in 9 h 20 min" (or "No alarms on"), refreshed every minute. */
+@Composable
+private fun NextAlarmSummary(alarms: List<Alarm>) {
+    val context = LocalContext.current
+    var minuteTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Wake just after the next minute boundary so the countdown stays in step with the clock.
+            delay(60_000L - System.currentTimeMillis() % 60_000L + 50L)
+            minuteTick++
+        }
+    }
+    // Re-read the clock every minute and whenever the alarms change (e.g. right after a snooze).
+    val now = remember(alarms, minuteTick) { System.currentTimeMillis() }
+    val next = alarms.filter { it.enabled }.minOfOrNull { it.nextRingMillis(now) }
+    Text(
+        text = if (next == null) {
+            stringResource(R.string.no_alarms_on)
+        } else {
+            stringResource(
+                R.string.next_alarm,
+                dayAndTimeText(context, next, now),
+                timeUntilShortText(context, next, now),
+            )
+        },
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp),
     )
 }
 

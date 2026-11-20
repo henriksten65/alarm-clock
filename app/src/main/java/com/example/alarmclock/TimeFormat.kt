@@ -53,3 +53,39 @@ fun repeatText(context: Context, days: Int): String = when (days) {
         .filter { days and Alarm.dayBit(it) != 0 }
         .joinToString(", ") { dayName(it, TextStyle.SHORT) }
 }
+
+/**
+ * "today 07:30", "tomorrow 07:30" or "Mon 07:30" for a time within the coming week.
+ */
+fun dayAndTimeText(context: Context, millis: Long, nowMillis: Long = System.currentTimeMillis()): String {
+    fun dayStart(m: Long) = Calendar.getInstance().apply {
+        timeInMillis = m
+        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+    }
+    val target = dayStart(millis)
+    val today = dayStart(nowMillis)
+    val tomorrow = (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, 1) }
+    val day = when (target.timeInMillis) {
+        today.timeInMillis -> context.getString(R.string.today)
+        tomorrow.timeInMillis -> context.getString(R.string.tomorrow)
+        else -> dayName(target.get(Calendar.DAY_OF_WEEK), TextStyle.SHORT)
+    }
+    return "$day ${formatTime(context, millis)}"
+}
+
+/**
+ * "in 2 d 7 h", "in 7 h 30 min" or "in 12 min". Rounds up to whole minutes, like the
+ * "Alarm set for …" message, so 1 min 40 s left reads "in 2 min".
+ */
+fun timeUntilShortText(context: Context, triggerAtMillis: Long, nowMillis: Long = System.currentTimeMillis()): String {
+    val totalMinutes = ((triggerAtMillis - nowMillis + 59_999L) / 60_000L).toInt()
+    val days = totalMinutes / (24 * 60)
+    val hours = totalMinutes / 60 % 24
+    val minutes = totalMinutes % 60
+    return when {
+        days > 0 -> context.getString(R.string.in_days_hours, days, hours)
+        hours > 0 -> context.getString(R.string.in_hours_minutes, hours, minutes)
+        minutes > 0 -> context.getString(R.string.in_minutes, minutes)
+        else -> context.getString(R.string.in_less_than_a_minute)
+    }
+}

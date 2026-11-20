@@ -4,6 +4,7 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 
 ## Features
 
+- "Next alarm: tomorrow 07:30 · in 9 h 20 min" summary at the top (includes snoozes; updates every minute)
 - List of alarms, sorted by time, with an on/off switch and delete button (**Undo** for 15 s after deleting)
 - Add / edit an alarm: time, optional label, and the weekdays it repeats on (none = rings once;
   the list shows "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri")
