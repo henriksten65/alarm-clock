@@ -1,0 +1,187 @@
+# Handoff — Android Alarm Clock app
+
+_Written 2026-11-20 at the end of a long session. Read this first, then `README.md`._
+
+## 1. Goal
+
+The user is building a personal **Android alarm clock app** (Kotlin, Jetpack Compose,
+Material 3) in `/mnt/data2/dev/Claude/alarm`. It was started in a Claude desktop app
+conversation and has been developed in Claude Code since. There's no fixed spec: the user
+asks for features one at a time, tests them in the emulator, and then says
+**"Save this as version X"**.
+
+## 2. Current state (as of this handoff)
+
+- **Version 2.0** (`versionCode 5`), tagged `v2.0` on `main`. One commit after the tag adds
+  this `HANDOFF.md` and `tools/emulator/` (see §7); the working tree is clean.
+- It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
+  There are **no automated tests**.
+- Git history and tags:
+
+  | Tag / commit | Contents |
+  |---|---|
+  | `v1.0` | Base app: alarm list, add/edit, label, daily repeat, `setAlarmClock` exact alarms, foreground ringing service, full-screen ring screen over lock screen, snooze/dismiss, reschedule on boot/time change |
+  | `v1.1` | Settings dialog (gear icon); time entry by **clock dial** or **typing digits on the number keypad**; "Typed times use 24-hour clock" setting |
+  | `v1.2` | **Weekday selection** per alarm (replaces "repeat daily", with migration); **alarm sound setting** (system alarm sounds or any audio file) |
+  | `v1.3` | **Direct Boot** (rings after a reboot before unlock); **ringing alarm can always be stopped from the app** (Ringing card, app opens the ring screen); **warning banners** (exact alarms, notifications off, full-screen alerts off, alarm volume at its lowest, Do Not Disturb silencing alarms); **visible, cancellable, persistent snooze** |
+  | `9c47399` | Undo after deleting an alarm (15 s snackbar; ids never reused) |
+  | `4afdc1f` | "Next alarm: tomorrow 07:30 · in 9 h 20 min" summary |
+  | `fd4217a` | "Missed alarm" notification when an alarm rings 10 min undismissed |
+  | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
+  | `v2.0` | Version bump only (these four commits) |
+
+- **Emulator state:** the AVD `Medium_Phone_API_37.0` was running as `emulator-5554`. It
+  contains the user's own **09:54 one-time alarm (switched off)**; don't delete it. Settings on
+  the emulator: time entry = Keyboard, "Typed times use 24-hour clock" = on, alarm sound =
+  `test_tone.wav` (a test file pushed to `/sdcard/Music/`). The PIN used for Direct Boot
+  testing was removed again, the lock screen is back to swipe, and the alarm volume is 6/7.
+
+## 3. Build & run (environment specifics)
+
+- **JDK:** the system Java and Android Studio's bundled JBR are both **JDK 25**, so Gradle
+  must be **≥ 9.1**. Build with:
+  `JAVA_HOME=/mnt/data2/dev/android-studio/jbr ./gradlew installDebug`
+- Versions: AGP 8.13.0 · Gradle 9.1.0 · Kotlin 2.2.20 · Compose BOM 2024.12.01 ·
+  compile/target SDK 35 · minSdk 26.
+- SDK: `~/Android/Sdk` (`local.properties`); adb: `~/Android/Sdk/platform-tools/adb`.
+- Android Studio lives in `/mnt/data2/dev/android-studio`. "No target device found" in Studio
+  just means the emulator isn't running; start it from Device Manager.
+- The repo has a **local** git identity (user `henriks`). Commit messages end with the
+  `Co-Authored-By` attribution line that the harness specifies.
+
+## 4. Architecture (where things are)
+
+`app/src/main/java/com/example/alarmclock/`
+
+| File | Role |
+|---|---|
+| `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
+| `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
+| `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri` |
+| `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
+| `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll` (keeps future snoozes, drops passed ones), `snooze`, `cancelSnooze`, `stopRinging` |
+| `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |
+| `AlarmService.kt` | Foreground service (mediaPlayback): sound fallback chain, vibration, ringing notification with full-screen intent, 10-min auto-stop, **missed-alarm notification**, `ringingAlarmId` StateFlow, notification channels (`ringing_alarms`, `missed_alarms`) |
+| `AlarmSound.kt` | Sound picker intent, display name, persisting read access to picked files |
+| `AlarmHealth.kt` | Checks + settings intents behind the warning banners |
+| `BootReceiver.kt` | `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED`, package replaced, time/timezone change, exact-alarm permission change → `rescheduleAll` |
+| `RingActivity.kt` | Full-screen ring UI over the lock screen (directBootAware); Back handling |
+| `MainActivity.kt` | Creates channels, asks for POST_NOTIFICATIONS, **auto-opens RingActivity** when an alarm is ringing |
+| `TimeFormat.kt` | Time formatting, weekday names/order, "Weekdays/Weekends/Mon, Wed" text, countdown texts |
+| `ui/AlarmListScreen.kt` | Main screen: banners, Ringing card, next-alarm summary, alarm cards (snooze row), edit dialog, settings dialog, M3 TimePicker dialog, undo snackbar |
+| `ui/KeyboardTimeDialog.kt` | Custom typed-digits time entry (`parseDigits`, visual transformation "630" → "6:30") |
+| `ui/DaySelector.kt` | Seven round toggle buttons, in the locale's week order |
+| `res/raw/fallback_alarm.wav` | Generated beep, last-resort sound (readable before unlock) |
+
+Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
+`directBootAware`. Permissions: `USE_EXACT_ALARM` (33+) / `SCHEDULE_EXACT_ALARM` (≤32),
+`POST_NOTIFICATIONS`, `USE_FULL_SCREEN_INTENT`, `FOREGROUND_SERVICE(_MEDIA_PLAYBACK)`,
+`RECEIVE_BOOT_COMPLETED`, `VIBRATE`, `WAKE_LOCK`.
+
+## 5. Key decisions and why
+
+- **`AlarmManager.setAlarmClock()`** for every alarm: exact, fires in Doze, shows the
+  system alarm icon, and lets the receiver start a foreground service from the background.
+- **SharedPreferences + JSON** instead of Room: little data, simple, and easy to move to
+  device-protected storage.
+- **Direct Boot** (v1.3): without it, a phone that reboots overnight (e.g. an automatic
+  update) never rings until it's unlocked. Verified with a real PIN and reboot.
+- **Sound fallback chain:** chosen sound → system default alarm → ringtone → notification →
+  bundled `fallback_alarm.wav`. Before the first unlock the user's file isn't readable; in
+  testing Android's cached default (`/data/system_de/0/ringtones/alarm_alert_cache`) played.
+- **One global alarm sound** ("a setting", as the user asked), not one per alarm.
+- **Weekdays as a `Calendar`-based bitmask**; `repeatDaily: true` migrates to all seven days.
+  Day buttons follow the locale's first day of the week (Monday on the emulator).
+- **Custom keyboard time entry**: digits are typed freely; the last two are the minutes
+  ("630" → 6:30, "1845" → 18:45, "7" → 7:00). AM/PM switch on 12-hour phones unless
+  "Typed times use 24-hour clock" is on. The field starts fully selected so typing replaces it.
+- **The ringing state is an in-process `StateFlow`** in `AlarmService`. The app uses it for the
+  Ringing card, to open the ring screen when launched, and to stop ringing when the alarm is
+  switched off or deleted. This makes an alarm stoppable even with notifications blocked.
+- **Banners:** "notifications off" takes precedence over "full-screen off" (FSI needs
+  notifications anyway), and "Do Not Disturb silencing alarms" over "volume low". The
+  volume check is **"at minimum or muted"**, not "0": on this Android the alarm stream's
+  minimum is 1/7. "Turn up" sets about 2/3 of max.
+- **Snooze** stored on the alarm (`snoozedUntil`) so it shows in the UI and survives
+  reboots. For a repeating alarm, the snooze replaces the pending regular trigger (same
+  PendingIntent); the regular schedule is recomputed when the snooze fires or is cancelled.
+- **Undo** uses an Indefinite snackbar wrapped in `withTimeoutOrNull(15 s)` (the standard
+  "Long" of 10 s was too short), plus a ✕ button.
+- **Next-alarm countdown rounds up** (consistent with the "Alarm set for …" toast) and
+  recomputes on every minute boundary **and** whenever the alarm list changes.
+- **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
+
+## 6. Rejected approaches (don't retry these)
+
+- **Gradle 8.x**: doesn't run on JDK 25 (the build fails with just "25.0.x").
+- **Framework `TimePickerDialog`**: old teal Holo look; replaced by M3 `TimePicker`.
+- **M3 `TimeInput`** for keyboard entry: it didn't replace existing digits on typing and
+  didn't reliably move from hours to minutes. Replaced by `KeyboardTimeDialog`.
+- **Renaming `mipmap-anydpi-v26` → `mipmap-anydpi`** (lint suggestion): aapt2 then failed
+  with "resource mipmap/ic_launcher not found". Keep `-v26`.
+- **Warning at alarm volume 0**: impossible on this Android (min 1).
+- **`SnackbarDuration.Long`** for Undo: too short.
+
+## 7. Testing workflow (how things were verified)
+
+The user wants each change **checked thoroughly on the emulator** before committing.
+Tools used:
+
+- `tools/emulator/ui.py`: `dump`, `tap TEXT
+  [--near TEXT2]`, `has TEXT` via `uiautomator dump`. `tools/emulator/mkalarm.sh HHMM
+  [Monday …]` creates an alarm through the UI (needs Keyboard time entry + 24-hour typing;
+  set `LABEL=Wake%sup` for a label, since `%s` is a space in `adb input text`).
+- Check scheduling: `adb shell dumpsys alarm | grep -A2 com.example.alarmclock | grep origWhen`.
+- Check ringing: `dumpsys activity services com.example.alarmclock` (ServiceRecord),
+  `dumpsys audio | grep USAGE_ALARM | grep state:started`, `dumpsys media.player` (open file).
+- Alarm volume: **`adb shell cmd audio set-volume 4 N`** / `get-stream-volume 4`
+  (`cmd media_session volume` silently doesn't work here).
+- DND: `cmd notification set_dnd none|priority|off`.
+- Notifications: after tapping "Don't allow", `pm grant` alone doesn't work; first run
+  `pm clear-permission-flags com.example.alarmclock android.permission.POST_NOTIFICATIONS user-set user-fixed`.
+  Revoking notifications also reset `USE_FULL_SCREEN_INTENT`; fix with
+  `appops set com.example.alarmclock USE_FULL_SCREEN_INTENT allow`.
+- Direct Boot test: `locksettings set-pin 1234`, create an alarm, `adb reboot`, don't unlock
+  (`dumpsys user` shows `RUNNING_LOCKED`), wait for the ring; afterwards unlock,
+  `locksettings clear --old 1234`, then `locksettings set-disabled false` (otherwise the lock
+  screen stays fully disabled).
+- The screen sleeps during long tests: `svc power stayon true` (set back to `false` afterwards).
+- After every test, delete the test alarms and leave the user's 09:54 alarm alone.
+
+## 8. Open questions / unresolved issues
+
+- **Not yet done from the improvement list:**
+  - *Extra features:* sound per alarm, adjustable snooze length, adjustable auto-stop
+    duration, vibration on/off, "skip next occurrence", translations (all strings are English).
+  - *Publishing:* no automated tests (candidates: `parseDigits`, `nextTriggerMillis` with
+    weekdays/DST, `rescheduleAll` snooze rules); `applicationId com.example.alarmclock`
+    must change before Play; no release signing; minify off; libraries are outdated
+    (lint: AGP 9.5.1, Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 36…).
+- **Unexplained emulator restart** at about 10:33 on 2026-11-20 during testing. Dropbox only had
+  `SYSTEM_RESTART`, with no app or system_server crash. Probably not the app; watch for a repeat.
+- **One-time alarm missed while the phone was off**: `rescheduleAll` schedules it for the next
+  day instead of treating it as missed. Not discussed with the user.
+- **When the phone is unlocked and in use**, Android shows the alarm as a heads-up
+  notification instead of opening the ring screen (platform behaviour; the user was told).
+  Also cosmetic: the heads-up notification overlaps the top of the ring screen.
+- Remaining lint (harmless): `UseKtx` (`Uri.parse` in `AlarmService`, `AlarmSound`),
+  `InlinedApi` (a constant in `BootReceiver`), `PluralsCandidate` (`missed_alarm_text`
+  should be a plural), plus the version-upgrade warnings.
+
+## 9. Immediate next step
+
+Nothing is half-finished. **Ask the user what to do next**, offering the remaining items
+from §8 (extra features, or preparing for publishing). Follow the established workflow:
+implement → build/install → test thoroughly on the emulator (and fix what you find) →
+update `README.md` → commit (one commit per item if asked) → when the user says "save as
+version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`, commit
+"Alarm Clock version X", and add an annotated tag `vX`.
+
+## 10. Key artifacts
+
+- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`; no remote)
+- `README.md`: user-facing feature list, layout, permissions (kept up to date with each change)
+- `HANDOFF.md`: this file
+- `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers
+- `app/src/main/res/raw/fallback_alarm.wav`: bundled fallback sound
+- Claude memory: `~/.claude/projects/-mnt-data2-dev-Claude-alarm/memory/` (build environment, handoff pointer)
