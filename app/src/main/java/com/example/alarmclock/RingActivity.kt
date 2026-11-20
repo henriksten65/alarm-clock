@@ -7,6 +7,8 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -32,6 +34,19 @@ class RingActivity : ComponentActivity() {
             IntentFilter(AlarmService.ACTION_ALARM_STOPPED),
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
+
+        // Back would hide this screen but leave the alarm ringing, so while it rings Back only
+        // explains how to stop it. (Home still works; the alarm can then be stopped from the
+        // notification or by opening the app.)
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (AlarmService.ringingAlarmId.value != null) {
+                    Toast.makeText(this@RingActivity, R.string.back_while_ringing, Toast.LENGTH_SHORT).show()
+                } else {
+                    finish()
+                }
+            }
+        })
 
         render(intent)
     }
