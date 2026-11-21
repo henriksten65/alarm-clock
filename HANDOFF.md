@@ -18,7 +18,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.2** (`versionCode 7`), tagged `v2.2`: the release-build setup (app id, signing, minify).
 - **Version 2.3** (`versionCode 8`), tagged `v2.3`: "Skip next".
 - **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
-- GitHub Releases with the signed APK exist for `v2.3` and `v2.4` (latest); see §3 for how they're made.
+- **Version 2.5** (`versionCode 10`), tagged `v2.5`: 147 automated tests; two small edit-dialog fixes they found.
+- GitHub Releases with the signed APK exist for `v2.3`, `v2.4` and `v2.5` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are **147 automated tests** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
@@ -39,6 +40,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v2.5` | **Automated tests** (147, `./gradlew testDebugUnitTest`); day buttons sized explicitly; keyboard focus requested inside the time dialog |
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
   debug build (v2.1 code) with the user's alarm. `io.github.henriksten65.alarmclock` is the
