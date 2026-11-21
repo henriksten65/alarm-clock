@@ -34,6 +34,9 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   "Stop ringing after" time rings as soon as the phone is back on; one missed by longer shows
   "Missed alarm: 07:30 · Label — The phone was off when it was due", and then a one-time alarm
   switches off and a repeating one waits for its next day. The same goes for snoozes
+- **Skip next** on a repeating alarm skips just its next ring ("Skipping Mon 07:30" with
+  **Don't skip**); it rings as usual after that. Switching the alarm off or changing its time or
+  days cancels the skip. A pending snooze still rings
 - Snooze is shown on the alarm ("Snoozed until 06:25") with **Cancel snooze**, and survives a
   reboot, app update or time change
 - While an alarm rings, the app shows a **Ringing** card with Dismiss/Snooze, and opening the app

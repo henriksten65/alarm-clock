@@ -22,12 +22,13 @@ class AlarmReceiver : BroadcastReceiver() {
         val alarm = repository.get(alarmId) ?: return
         if (!alarm.enabled) return
 
-        // Ringing now, so any snooze is used up.
+        // Ringing now, so any snooze is used up (and a skip that has passed).
         if (alarm.repeats) {
-            val updated = alarm.copy(snoozedUntil = 0L)
+            val now = System.currentTimeMillis()
+            val updated = alarm.copy(snoozedUntil = 0L, skippedAt = alarm.skippedAt.takeIf { it > now } ?: 0L)
             repository.upsert(updated)
             // Schedule the next selected day (offset by a minute so we never re-pick this occurrence).
-            AlarmScheduler.schedule(context, updated, updated.nextTriggerMillis(System.currentTimeMillis() + 60_000L))
+            AlarmScheduler.schedule(context, updated, updated.nextTriggerMillis(now + 60_000L))
         } else {
             repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
             AlarmScheduler.forgetDueTime(context, alarmId)

@@ -14,6 +14,9 @@ const val EXTRA_ALARM_ID = "io.github.henriksten65.alarmclock.EXTRA_ALARM_ID"
  *
  * [snoozedUntil] is the epoch millis a snoozed alarm will ring again, or 0 if not snoozed.
  *
+ * [skippedAt] is the epoch millis of one regular occurrence the user chose to skip, or 0.
+ * It only has an effect while it matches an upcoming occurrence exactly, so it lapses by itself.
+ *
  * [soundUri] is this alarm's own sound (a ringtone or audio-file URI), or null to use the
  * alarm sound from the settings.
  */
@@ -26,6 +29,7 @@ data class Alarm(
     val days: Int = 0,
     val snoozedUntil: Long = 0L,
     val soundUri: String? = null,
+    val skippedAt: Long = 0L,
 ) {
     val repeats: Boolean get() = days != 0
 
@@ -35,10 +39,20 @@ data class Alarm(
     fun nextRingMillis(nowMillis: Long = System.currentTimeMillis()): Long =
         if (isSnoozed(nowMillis)) snoozedUntil else nextTriggerMillis(nowMillis)
 
+    /** True while the next regular occurrence is being skipped. */
+    fun isSkipping(nowMillis: Long = System.currentTimeMillis()): Boolean =
+        skippedAt > nowMillis && nextOccurrenceMillis(nowMillis) == skippedAt
+
     fun isOnDay(calendarDay: Int): Boolean = days and dayBit(calendarDay) != 0
 
-    /** The next time (epoch millis) this alarm should ring, strictly after [fromMillis]. */
+    /** The next time (epoch millis) this alarm should ring, strictly after [fromMillis], leaving out a skipped occurrence. */
     fun nextTriggerMillis(fromMillis: Long = System.currentTimeMillis()): Long {
+        val next = nextOccurrenceMillis(fromMillis)
+        return if (next == skippedAt) nextOccurrenceMillis(next) else next
+    }
+
+    /** The next occurrence of the alarm's time (on a selected day), strictly after [fromMillis]; ignores [skippedAt]. */
+    fun nextOccurrenceMillis(fromMillis: Long = System.currentTimeMillis()): Long {
         val cal = Calendar.getInstance().apply {
             timeInMillis = fromMillis
             set(Calendar.HOUR_OF_DAY, hour)
@@ -63,6 +77,7 @@ data class Alarm(
         .put("days", days)
         .put("snoozedUntil", snoozedUntil)
         .apply { if (soundUri != null) put("sound", soundUri) }
+        .apply { if (skippedAt != 0L) put("skippedAt", skippedAt) }
 
     companion object {
         const val EVERY_DAY = 0b1111111
@@ -88,6 +103,7 @@ data class Alarm(
             },
             snoozedUntil = json.optLong("snoozedUntil", 0L),
             soundUri = json.optString("sound").ifEmpty { null },
+            skippedAt = json.optLong("skippedAt", 0L),
         )
     }
 }

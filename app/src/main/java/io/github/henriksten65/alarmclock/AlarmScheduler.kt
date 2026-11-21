@@ -125,6 +125,26 @@ object AlarmScheduler {
         }
     }
 
+    /** Skips the next regular occurrence of a repeating alarm (a pending snooze still rings). */
+    fun skipNext(context: Context, alarmId: Int): Alarm? {
+        val repository = AlarmRepository.getInstance(context)
+        val alarm = repository.get(alarmId)?.takeIf { it.repeats && it.enabled } ?: return null
+        val updated = alarm.copy(skippedAt = alarm.copy(skippedAt = 0L).nextOccurrenceMillis())
+        repository.upsert(updated)
+        schedule(context, updated)
+        return updated
+    }
+
+    /** Undoes [skipNext]. */
+    fun cancelSkip(context: Context, alarmId: Int): Alarm? {
+        val repository = AlarmRepository.getInstance(context)
+        val alarm = repository.get(alarmId) ?: return null
+        val updated = alarm.copy(skippedAt = 0L)
+        repository.upsert(updated)
+        if (updated.enabled) schedule(context, updated)
+        return updated
+    }
+
     fun stopRinging(context: Context) {
         context.stopService(Intent(context, AlarmService::class.java))
     }

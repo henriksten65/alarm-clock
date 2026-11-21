@@ -150,6 +150,18 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
         onDispose { context.unregisterReceiver(receiver) }
     }
 
+    // The current time, re-read every minute and whenever the alarms change (e.g. right after a
+    // snooze), for the "Next alarm" summary and the snooze/skip lines on the cards.
+    var minuteTick by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            // Wake just after the next minute boundary so the texts stay in step with the clock.
+            delay(60_000L - System.currentTimeMillis() % 60_000L + 50L)
+            minuteTick++
+        }
+    }
+    val now = remember(alarms, minuteTick) { System.currentTimeMillis() }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
@@ -229,7 +241,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                 }
             }
 
-            if (alarms.isNotEmpty()) NextAlarmSummary(alarms)
+            if (alarms.isNotEmpty()) NextAlarmSummary(alarms, now)
 
             if (alarms.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -247,17 +259,28 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                     items(alarms, key = { it.id }) { alarm ->
                         AlarmCard(
                             alarm = alarm,
+                            now = now,
                             onClick = { editing = alarm },
                             onToggle = { checked ->
                                 if (checked) {
                                     enableAndSchedule(alarm)
                                 } else {
-                                    repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                                    repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L, skippedAt = 0L))
                                     AlarmScheduler.cancel(context, alarm.id)
                                     stopIfRinging(alarm.id)
                                 }
                             },
                             onCancelSnooze = { AlarmScheduler.cancelSnooze(context, alarm.id) },
+                            onSkipNext = {
+                                AlarmScheduler.skipNext(context, alarm.id)?.let {
+                                    Toast.makeText(context, timeUntilText(context, it.nextRingMillis()), Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            onCancelSkip = {
+                                AlarmScheduler.cancelSkip(context, alarm.id)?.let {
+                                    Toast.makeText(context, timeUntilText(context, it.nextRingMillis()), Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             onDelete = {
                                 AlarmScheduler.cancel(context, alarm.id)
                                 repository.delete(alarm.id)
@@ -479,20 +502,10 @@ private fun MinutesSetting(labelRes: Int, minutes: Int, options: List<Int>, onCh
     }
 }
 
-/** "Next alarm: tomorrow 07:30 · in 9 h 20 min" (or "No alarms on"), refreshed every minute. */
+/** "Next alarm: tomorrow 07:30 · in 9 h 20 min" (or "No alarms on") as of [now]. */
 @Composable
-private fun NextAlarmSummary(alarms: List<Alarm>) {
+private fun NextAlarmSummary(alarms: List<Alarm>, now: Long) {
     val context = LocalContext.current
-    var minuteTick by remember { mutableIntStateOf(0) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            // Wake just after the next minute boundary so the countdown stays in step with the clock.
-            delay(60_000L - System.currentTimeMillis() % 60_000L + 50L)
-            minuteTick++
-        }
-    }
-    // Re-read the clock every minute and whenever the alarms change (e.g. right after a snooze).
-    val now = remember(alarms, minuteTick) { System.currentTimeMillis() }
     val next = alarms.filter { it.enabled }.minOfOrNull { it.nextRingMillis(now) }
     Text(
         text = if (next == null) {
@@ -549,9 +562,12 @@ private fun RingingCard(alarm: Alarm?, onSnooze: () -> Unit, onDismiss: () -> Un
 @Composable
 private fun AlarmCard(
     alarm: Alarm,
+    now: Long,
     onClick: () -> Unit,
     onToggle: (Boolean) -> Unit,
     onCancelSnooze: () -> Unit,
+    onSkipNext: () -> Unit,
+    onCancelSkip: () -> Unit,
     onDelete: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -571,7 +587,7 @@ private fun AlarmCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                 )
-                if (alarm.enabled && alarm.isSnoozed()) {
+                if (alarm.enabled && alarm.isSnoozed(now)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             stringResource(R.string.snoozed_until, formatTime(context, alarm.snoozedUntil)),
@@ -579,6 +595,22 @@ private fun AlarmCard(
                             color = MaterialTheme.colorScheme.primary,
                         )
                         TextButton(onClick = onCancelSnooze) { Text(stringResource(R.string.cancel_snooze)) }
+                    }
+                }
+                if (alarm.enabled && alarm.repeats) {
+                    if (alarm.isSkipping(now)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                stringResource(R.string.skipping, dayAndTimeText(context, alarm.skippedAt, now)),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                            TextButton(onClick = onCancelSkip) { Text(stringResource(R.string.dont_skip)) }
+                        }
+                    } else {
+                        TextButton(onClick = onSkipNext, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                            Text(stringResource(R.string.skip_next))
+                        }
                     }
                 }
             }
@@ -639,7 +671,14 @@ private fun EditAlarmDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(initial.copy(hour = hour, minute = minute, label = label.trim(), days = days, soundUri = soundUri))
+                // A skip belongs to one occurrence of the old time/days; drop it if those change.
+                val sameSchedule = hour == initial.hour && minute == initial.minute && days == initial.days
+                onSave(
+                    initial.copy(
+                        hour = hour, minute = minute, label = label.trim(), days = days, soundUri = soundUri,
+                        skippedAt = if (sameSchedule) initial.skippedAt else 0L,
+                    ),
+                )
             }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {

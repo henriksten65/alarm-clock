@@ -79,4 +79,7 @@
     <string name="use_default_sound">Default (from Settings)</string>
     <string name="change">Change</string>
     <string name="missed_phone_off">The phone was off when it was due</string>
+    <string name="skip_next">Skip next</string>
+    <string name="skipping">Skipping %1$s</string>
+    <string name="dont_skip">Don\'t skip</string>
 </resources>

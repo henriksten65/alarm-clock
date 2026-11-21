@@ -32,6 +32,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
   | `v2.1` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
+  | after `v2.2` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
@@ -68,7 +69,7 @@ asks for features one at a time, tests them in the emulator, and then says
 
 | File | Role |
 |---|---|
-| `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none), `soundUri` (null = sound from Settings). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
+| `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none), `soundUri` (null = sound from Settings), `skippedAt` (one skipped occurrence, epoch ms; only counts while it equals the next occurrence, so it lapses by itself). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
 | `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate` |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
@@ -179,7 +180,7 @@ Tools used:
 ## 8. Open questions / unresolved issues
 
 - **Not yet done from the improvement list:**
-  - *Extra features:* "skip next occurrence", translations (all strings are English).
+  - *Extra features:* translations (all strings are English).
   - *Publishing:* the user only wants an APK to install directly for now (2026-11-21). Still open
     for a later Play release: no automated tests (candidates: `parseDigits`, `nextTriggerMillis`
     with weekdays/DST, `rescheduleAll` catch-up rules); outdated libraries (lint: AGP 9.5.1,
