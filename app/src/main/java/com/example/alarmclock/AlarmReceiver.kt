@@ -30,6 +30,7 @@ class AlarmReceiver : BroadcastReceiver() {
             AlarmScheduler.schedule(context, updated, updated.nextTriggerMillis(System.currentTimeMillis() + 60_000L))
         } else {
             repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+            AlarmScheduler.forgetDueTime(context, alarmId)
         }
 
         // Alarms set with setAlarmClock() are allowed to start a foreground service from the background.

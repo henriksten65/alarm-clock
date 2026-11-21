@@ -30,6 +30,10 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 - Alarms are re-registered after reboot, app update, and time / time-zone changes — and they
   ring even if the phone restarted and hasn't been unlocked yet (Direct Boot: alarm data lives in
   device-protected storage; a built-in fallback sound plays if the chosen one can't be read yet)
+- If the phone was off (or restarting) when an alarm was due: an alarm missed by less than the
+  "Stop ringing after" time rings as soon as the phone is back on; one missed by longer shows
+  "Missed alarm: 07:30 · Label — The phone was off when it was due", and then a one-time alarm
+  switches off and a repeating one waits for its next day. The same goes for snoozes
 - Snooze is shown on the alarm ("Snoozed until 06:25") with **Cancel snooze**, and survives a
   reboot, app update or time change
 - While an alarm rings, the app shows a **Ringing** card with Dismiss/Snooze, and opening the app

@@ -1,6 +1,6 @@
 # Handoff — Android Alarm Clock app
 
-_Written 2026-11-20 at the end of a long session. Read this first, then `README.md`._
+_Written 2026-11-20 at the end of a long session, updated 2026-11-21. Read this first, then `README.md`._
 
 ## 1. Goal
 
@@ -12,8 +12,9 @@ asks for features one at a time, tests them in the emulator, and then says
 
 ## 2. Current state (as of this handoff)
 
-- **Version 2.0** (`versionCode 5`), tagged `v2.0` on `main`. One commit after the tag adds
-  this `HANDOFF.md` and `tools/emulator/` (see §7); the working tree is clean.
+- **Version 2.0** (`versionCode 5`), tagged `v2.0` on `main`. After the tag: this `HANDOFF.md`
+  and `tools/emulator/` (see §7), then the 2026-11-21 features (see the table below), not yet
+  saved as a version.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   There are **no automated tests**.
 - Git history and tags:
@@ -29,6 +30,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `fd4217a` | "Missed alarm" notification when an alarm rings 10 min undismissed |
   | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
+| after `v2.0` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
 
 - **Emulator state:** the AVD `Medium_Phone_API_37.0` was running as `emulator-5554`. It
   contains the user's own **09:54 one-time alarm (switched off)**; don't delete it. Settings on
@@ -55,14 +57,14 @@ asks for features one at a time, tests them in the emulator, and then says
 
 | File | Role |
 |---|---|
-| `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
+| `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none), `soundUri` (null = sound from Settings). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
-| `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri` |
+| `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate` |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
-| `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll` (keeps future snoozes, drops passed ones), `snooze`, `cancelSnooze`, `stopRinging` |
+| `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll(catchUpMissed)`, `snooze`, `cancelSnooze`, `stopRinging`. Remembers each alarm's due time (`due_times` prefs) to find alarms missed while the phone was off |
 | `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |
-| `AlarmService.kt` | Foreground service (mediaPlayback): sound fallback chain, vibration, ringing notification with full-screen intent, 10-min auto-stop, **missed-alarm notification**, `ringingAlarmId` StateFlow, notification channels (`ringing_alarms`, `missed_alarms`) |
-| `AlarmSound.kt` | Sound picker intent, display name, persisting read access to picked files |
+| `AlarmService.kt` | Foreground service (`systemExempted` on 14+, mediaPlayback before): sound fallback chain, vibration, ringing notification with full-screen intent, 10-min auto-stop, **missed-alarm notification**, `ringingAlarmId` StateFlow, notification channels (`ringing_alarms`, `missed_alarms`) |
+| `AlarmSound.kt` | Sound picker intent, display name, `accept` (persist read access), `releaseUnused` (at app start) |
 | `AlarmHealth.kt` | Checks + settings intents behind the warning banners |
 | `BootReceiver.kt` | `LOCKED_BOOT_COMPLETED`, `BOOT_COMPLETED`, package replaced, time/timezone change, exact-alarm permission change → `rescheduleAll` |
 | `RingActivity.kt` | Full-screen ring UI over the lock screen (directBootAware); Back handling |
@@ -75,7 +77,7 @@ asks for features one at a time, tests them in the emulator, and then says
 
 Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
 `directBootAware`. Permissions: `USE_EXACT_ALARM` (33+) / `SCHEDULE_EXACT_ALARM` (≤32),
-`POST_NOTIFICATIONS`, `USE_FULL_SCREEN_INTENT`, `FOREGROUND_SERVICE(_MEDIA_PLAYBACK)`,
+`POST_NOTIFICATIONS`, `USE_FULL_SCREEN_INTENT`, `FOREGROUND_SERVICE(_SYSTEM_EXEMPTED, _MEDIA_PLAYBACK)`,
 `RECEIVE_BOOT_COMPLETED`, `VIBRATE`, `WAKE_LOCK`.
 
 ## 5. Key decisions and why
@@ -89,7 +91,15 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
 - **Sound fallback chain:** chosen sound → system default alarm → ringtone → notification →
   bundled `fallback_alarm.wav`. Before the first unlock the user's file isn't readable; in
   testing Android's cached default (`/data/system_de/0/ringtones/alarm_alert_cache`) played.
-- **One global alarm sound** ("a setting", as the user asked), not one per alarm.
+- **Alarm sound**: a global one in Settings, plus an optional sound per alarm ("Default" = the
+  Settings sound). File read permissions are released only at a fresh app start, when no alarm
+  or setting uses the file, so Undo/cancel never leaves an alarm with an unreadable file.
+- **Snooze length, auto-stop and vibration are global settings** (like the alarm sound).
+- **Missed while off**: after boot / app update (`catchUpMissed`; not on time/zone changes), an
+  alarm whose stored due time passed rings now if less than the auto-stop time late, otherwise
+  posts "Missed alarm … The phone was off when it was due" (one-time → off, repeating → next day).
+- **FGS type `systemExempted`** (14+): `mediaPlayback` can't start during the BOOT_COMPLETED
+  allowance on Android 15+ (crash: "FGS type mediaPlayback not allowed to start from BOOT_COMPLETED").
 - **Weekdays as a `Calendar`-based bitmask**; `repeatDaily: true` migrates to all seven days.
   Day buttons follow the locale's first day of the week (Monday on the emulator).
 - **Custom keyboard time entry**: digits are typed freely; the last two are the minutes
@@ -121,6 +131,10 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   with "resource mipmap/ic_launcher not found". Keep `-v26`.
 - **Warning at alarm volume 0**: impossible on this Android (min 1).
 - **`SnackbarDuration.Long`** for Undo: too short.
+- **Testing "phone off" with `am force-stop`** (doesn't clear AlarmManager alarms on this Android)
+  or `pm disable` of a component (not allowed for the shell). What worked: switch the alarms off,
+  wait past the due time, write the saved `alarms.xml`/`due_times.xml` back with
+  `run-as … sh -c 'cat > …'` (app force-stopped), then `adb reboot`.
 
 ## 7. Testing workflow (how things were verified)
 
@@ -151,22 +165,18 @@ Tools used:
 ## 8. Open questions / unresolved issues
 
 - **Not yet done from the improvement list:**
-  - *Extra features:* sound per alarm, adjustable snooze length, adjustable auto-stop
-    duration, vibration on/off, "skip next occurrence", translations (all strings are English).
+  - *Extra features:* "skip next occurrence", translations (all strings are English).
   - *Publishing:* no automated tests (candidates: `parseDigits`, `nextTriggerMillis` with
     weekdays/DST, `rescheduleAll` snooze rules); `applicationId com.example.alarmclock`
     must change before Play; no release signing; minify off; libraries are outdated
     (lint: AGP 9.5.1, Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 36…).
 - **Unexplained emulator restart** at about 10:33 on 2026-11-20 during testing. Dropbox only had
   `SYSTEM_RESTART`, with no app or system_server crash. Probably not the app; watch for a repeat.
-- **One-time alarm missed while the phone was off**: `rescheduleAll` schedules it for the next
-  day instead of treating it as missed. Not discussed with the user.
 - **When the phone is unlocked and in use**, Android shows the alarm as a heads-up
   notification instead of opening the ring screen (platform behaviour; the user was told).
   Also cosmetic: the heads-up notification overlaps the top of the ring screen.
 - Remaining lint (harmless): `UseKtx` (`Uri.parse` in `AlarmService`, `AlarmSound`),
-  `InlinedApi` (a constant in `BootReceiver`), `PluralsCandidate` (`missed_alarm_text`
-  should be a plural), plus the version-upgrade warnings.
+  `InlinedApi` (a constant in `BootReceiver`), plus the version-upgrade warnings.
 
 ## 9. Immediate next step
 

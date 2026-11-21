@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.content.edit
 
 /** Wraps AlarmManager. Uses setAlarmClock() so alarms are exact and fire even in Doze. */
 object AlarmScheduler {
@@ -28,6 +29,7 @@ object AlarmScheduler {
                 AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
                 firePendingIntent(context, alarm.id),
             )
+            dueTimes(context).edit { putLong(alarm.id.toString(), triggerAtMillis) }
             true
         } catch (e: SecurityException) {
             false
@@ -36,17 +38,45 @@ object AlarmScheduler {
 
     fun cancel(context: Context, alarmId: Int) {
         context.getSystemService(AlarmManager::class.java).cancel(firePendingIntent(context, alarmId))
+        forgetDueTime(context, alarmId)
+    }
+
+    /** Called when an alarm has fired and nothing is scheduled for it any more. */
+    fun forgetDueTime(context: Context, alarmId: Int) {
+        dueTimes(context).edit { remove(alarmId.toString()) }
     }
 
     /**
-     * Re-registers all enabled alarms, e.g. after reboot or a time zone change. A snooze that is
-     * still in the future is kept; one that already passed (phone was off) is dropped.
+     * Re-registers all enabled alarms, e.g. after reboot or a time zone change.
+     *
+     * With [catchUpMissed] (after a reboot or app update, when AlarmManager has forgotten our
+     * alarms), alarms whose time passed in the meantime are handled first: one missed by less
+     * than the "stop ringing after" time rings now, late; one missed by more gets a "Missed
+     * alarm" notification and then is switched off (one-time) or moves on to its next day.
+     *
+     * Otherwise, a snooze that is still in the future is kept; one that already passed is dropped.
      */
-    fun rescheduleAll(context: Context) {
+    fun rescheduleAll(context: Context, catchUpMissed: Boolean) {
         val repository = AlarmRepository.getInstance(context)
         val now = System.currentTimeMillis()
+        val ringLateWindow = AppSettings.getInstance(context).autoStopMinutes.value * 60_000L
         repository.alarms.value.filter { it.enabled }.forEach { alarm ->
+            val due = if (catchUpMissed) dueTime(context, alarm.id) else null
             when {
+                // Rings right away (AlarmManager fires a time in the past immediately).
+                due != null && due <= now && now - due < ringLateWindow -> schedule(context, alarm, now)
+                due != null && due <= now -> {
+                    AlarmService.notifyMissed(context, alarm, context.getString(R.string.missed_phone_off))
+                    if (alarm.repeats) {
+                        alarm.copy(snoozedUntil = 0L).also {
+                            repository.upsert(it)
+                            schedule(context, it)
+                        }
+                    } else {
+                        repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                        forgetDueTime(context, alarm.id)
+                    }
+                }
                 alarm.snoozedUntil == 0L || alarm.isSnoozed(now) -> schedule(context, alarm)
                 alarm.repeats -> alarm.copy(snoozedUntil = 0L).also {
                     repository.upsert(it)
@@ -98,6 +128,15 @@ object AlarmScheduler {
     fun stopRinging(context: Context) {
         context.stopService(Intent(context, AlarmService::class.java))
     }
+
+    /**
+     * When each scheduled alarm is due, by alarm id, so alarms that should have rung while the
+     * phone was off can be found after a reboot. Device-protected, so it's readable before unlock.
+     */
+    private fun dueTimes(context: Context) = deviceProtectedPrefs(context, "due_times")
+
+    private fun dueTime(context: Context, alarmId: Int): Long? =
+        dueTimes(context).getLong(alarmId.toString(), 0L).takeIf { it != 0L }
 
     private fun firePendingIntent(context: Context, alarmId: Int): PendingIntent =
         PendingIntent.getBroadcast(

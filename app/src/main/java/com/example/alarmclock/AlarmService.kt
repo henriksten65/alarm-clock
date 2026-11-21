@@ -79,7 +79,11 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         handler.removeCallbacks(autoStop)
-        if (timedOut) _ringingAlarmId.value?.let { notifyMissed(it) }
+        if (timedOut) {
+            _ringingAlarmId.value?.let { AlarmRepository.getInstance(this).get(it) }?.let { alarm ->
+                notifyMissed(this, alarm, resources.getQuantityString(R.plurals.missed_alarm_text, autoStopMinutes, autoStopMinutes))
+            }
+        }
         player?.run {
             stop()
             release()
@@ -162,34 +166,6 @@ class AlarmService : Service() {
             .build()
     }
 
-    /** "Missed alarm · 06:15 Work" – posted when an alarm rang out without being dismissed. */
-    private fun notifyMissed(alarmId: Int) {
-        val alarm = AlarmRepository.getInstance(this).get(alarmId)
-        val time = alarm?.let { formatTime(this, it.hour, it.minute) }.orEmpty()
-        val what = listOfNotNull(time.ifEmpty { null }, alarm?.label?.takeIf { it.isNotBlank() }).joinToString(" · ")
-        val openApp = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        val notification = NotificationCompat.Builder(this, MISSED_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_alarm)
-            .setContentTitle(getString(R.string.missed_alarm, what))
-            .setContentText(resources.getQuantityString(R.plurals.missed_alarm_text, autoStopMinutes, autoStopMinutes))
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setWhen(System.currentTimeMillis())
-            .setShowWhen(true)
-            .setContentIntent(openApp)
-            .setAutoCancel(true)
-            .build()
-        try {
-            NotificationManagerCompat.from(this).notify(MISSED_NOTIFICATION_ID_BASE + alarmId, notification)
-        } catch (e: SecurityException) {
-            // Notifications are off; the app already shows a banner about that.
-        }
-    }
-
     private fun actionIntent(action: String, alarmId: Int): PendingIntent =
         PendingIntent.getBroadcast(
             this,
@@ -206,6 +182,35 @@ class AlarmService : Service() {
 
         /** The id of the alarm that is ringing right now, or null. */
         val ringingAlarmId: StateFlow<Int?> = _ringingAlarmId.asStateFlow()
+
+        /** "Missed alarm: 06:15 · Work" with [text] saying why. */
+        fun notifyMissed(context: Context, alarm: Alarm, text: String) {
+            val what = listOf(formatTime(context, alarm.hour, alarm.minute), alarm.label)
+                .filter { it.isNotBlank() }
+                .joinToString(" · ")
+            val openApp = PendingIntent.getActivity(
+                context,
+                0,
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            createNotificationChannel(context)
+            val notification = NotificationCompat.Builder(context, MISSED_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_alarm)
+                .setContentTitle(context.getString(R.string.missed_alarm, what))
+                .setContentText(text)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setWhen(System.currentTimeMillis())
+                .setShowWhen(true)
+                .setContentIntent(openApp)
+                .setAutoCancel(true)
+                .build()
+            try {
+                NotificationManagerCompat.from(context).notify(MISSED_NOTIFICATION_ID_BASE + alarm.id, notification)
+            } catch (e: SecurityException) {
+                // Notifications are off; the app already shows a banner about that.
+            }
+        }
 
         /** Creates the notification channels (safe to call repeatedly). */
         fun createNotificationChannel(context: Context) {

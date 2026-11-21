@@ -11,7 +11,11 @@ import android.content.Intent
  */
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action in HANDLED_ACTIONS) AlarmScheduler.rescheduleAll(context)
+        if (intent.action !in HANDLED_ACTIONS) return
+        // After a time or time zone change our alarms are still registered (AlarmManager itself
+        // fires those that are now in the past); otherwise they were lost, maybe while one was due.
+        val catchUpMissed = intent.action != Intent.ACTION_TIME_CHANGED && intent.action != Intent.ACTION_TIMEZONE_CHANGED
+        AlarmScheduler.rescheduleAll(context, catchUpMissed)
     }
 
     private companion object {

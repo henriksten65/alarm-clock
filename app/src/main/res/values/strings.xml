@@ -78,4 +78,5 @@
     <string name="sound_default">Default (%1$s)</string>
     <string name="use_default_sound">Default (from Settings)</string>
     <string name="change">Change</string>
+    <string name="missed_phone_off">The phone was off when it was due</string>
 </resources>
