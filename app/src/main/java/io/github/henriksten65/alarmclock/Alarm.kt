@@ -1,9 +1,9 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import org.json.JSONObject
 import java.util.Calendar
 
-const val EXTRA_ALARM_ID = "com.example.alarmclock.EXTRA_ALARM_ID"
+const val EXTRA_ALARM_ID = "io.github.henriksten65.alarmclock.EXTRA_ALARM_ID"
 
 /**
  * A single alarm. Time is stored as wall-clock hour/minute in the device's time zone.

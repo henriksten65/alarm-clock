@@ -1,4 +1,4 @@
-package com.example.alarmclock.ui
+package io.github.henriksten65.alarmclock.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,9 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.example.alarmclock.Alarm
-import com.example.alarmclock.dayName
-import com.example.alarmclock.weekDaysInLocaleOrder
+import io.github.henriksten65.alarmclock.Alarm
+import io.github.henriksten65.alarmclock.dayName
+import io.github.henriksten65.alarmclock.weekDaysInLocaleOrder
 import java.time.format.TextStyle
 
 /** A row of seven round day buttons (first day of the week per locale); tap to toggle each day. */

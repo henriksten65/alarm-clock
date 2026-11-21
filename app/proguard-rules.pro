@@ -1,2 +1,2 @@
-# Add project specific ProGuard rules here.
-# Minification is disabled for release builds by default (see app/build.gradle.kts).
+# Project-specific R8 rules. The app needs none so far: alarms are stored with org.json
+# (no reflection), and all components are referenced from the manifest, which R8 keeps.

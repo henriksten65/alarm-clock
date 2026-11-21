@@ -1,4 +1,4 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -13,8 +13,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
-import com.example.alarmclock.ui.AlarmClockTheme
-import com.example.alarmclock.ui.RingScreen
+import io.github.henriksten65.alarmclock.ui.AlarmClockTheme
+import io.github.henriksten65.alarmclock.ui.RingScreen
 
 /** Full-screen UI shown while an alarm rings, including over the lock screen. */
 class RingActivity : ComponentActivity() {

@@ -53,6 +53,27 @@ From the command line: `./gradlew assembleDebug` (needs `ANDROID_HOME` or a `loc
 with `sdk.dir=...`; Android Studio creates that file on first sync). Gradle needs a JDK it supports — JDK 25
 requires Gradle ≥ 9.1; Android Studio's bundled JDK works: `JAVA_HOME=<android-studio>/jbr ./gradlew assembleDebug`.
 
+## Release build (APK to install directly)
+
+`./gradlew assembleRelease` builds `app/build/outputs/apk/release/AlarmClock-<version>-release.apk`
+(minified with R8). It's signed with the key named in `keystore.properties` in the project root,
+which is **not in git**:
+
+```
+storeFile=/home/<you>/.android/keystores/alarmclock-release.jks
+storePassword=…
+keyAlias=alarmclock
+keyPassword=…
+```
+
+**Back up the keystore and `keystore.properties`.** Android installs an update only if it's
+signed with the same key. Without the key you'd have to uninstall the app, deleting its alarms.
+
+To install: copy the APK to the phone, open it, and allow "Install unknown apps" for the app you
+opened it with. Or use `adb install AlarmClock-2.1-release.apk`. Debug builds have the id
+`io.github.henriksten65.alarmclock.debug` and the name "Alarm Clock Debug", so they install next
+to the release app.
+
 ## Versions
 
 AGP 8.13.0 · Gradle 9.1.0 · Kotlin 2.2.20 · Compose BOM 2024.12.01 · compileSdk/targetSdk 35 · minSdk 26.
@@ -61,7 +82,7 @@ All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgr
 ## Project layout
 
 ```
-app/src/main/java/com/example/alarmclock/
+app/src/main/java/io/github/henriksten65/alarmclock/
   Alarm.kt            data class + next-trigger calculation + JSON (de)serialisation
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
   AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound, snooze, auto-stop, vibrate), SharedPreferences + StateFlow

@@ -1,4 +1,4 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -41,8 +41,8 @@ class AlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        const val ACTION_FIRE = "com.example.alarmclock.action.FIRE"
-        const val ACTION_SNOOZE = "com.example.alarmclock.action.SNOOZE"
-        const val ACTION_DISMISS = "com.example.alarmclock.action.DISMISS"
+        const val ACTION_FIRE = "io.github.henriksten65.alarmclock.action.FIRE"
+        const val ACTION_SNOOZE = "io.github.henriksten65.alarmclock.action.SNOOZE"
+        const val ACTION_DISMISS = "io.github.henriksten65.alarmclock.action.DISMISS"
     }
 }

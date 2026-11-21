@@ -1,4 +1,4 @@
-package com.example.alarmclock.ui
+package io.github.henriksten65.alarmclock.ui
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

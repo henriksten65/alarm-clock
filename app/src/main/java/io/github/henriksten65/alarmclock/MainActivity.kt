@@ -1,4 +1,4 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import android.Manifest
 import android.content.Intent
@@ -13,8 +13,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.alarmclock.ui.AlarmClockTheme
-import com.example.alarmclock.ui.AlarmListScreen
+import io.github.henriksten65.alarmclock.ui.AlarmClockTheme
+import io.github.henriksten65.alarmclock.ui.AlarmListScreen
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {

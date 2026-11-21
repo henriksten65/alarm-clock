@@ -1,4 +1,4 @@
-package com.example.alarmclock.ui
+package io.github.henriksten65.alarmclock.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,9 +28,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.alarmclock.AppSettings
-import com.example.alarmclock.R
-import com.example.alarmclock.formatTime
+import io.github.henriksten65.alarmclock.AppSettings
+import io.github.henriksten65.alarmclock.R
+import io.github.henriksten65.alarmclock.formatTime
 import kotlinx.coroutines.delay
 
 @Composable

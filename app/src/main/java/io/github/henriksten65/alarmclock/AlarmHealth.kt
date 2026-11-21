@@ -1,4 +1,4 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import android.app.NotificationManager
 import android.content.Context

@@ -1,4 +1,4 @@
-package com.example.alarmclock
+package io.github.henriksten65.alarmclock
 
 import android.app.Notification
 import android.app.PendingIntent
@@ -175,7 +175,7 @@ class AlarmService : Service() {
         )
 
     companion object {
-        const val ACTION_ALARM_STOPPED = "com.example.alarmclock.action.ALARM_STOPPED"
+        const val ACTION_ALARM_STOPPED = "io.github.henriksten65.alarmclock.action.ALARM_STOPPED"
         const val CHANNEL_ID = "ringing_alarms"
 
         private val _ringingAlarmId = MutableStateFlow<Int?>(null)

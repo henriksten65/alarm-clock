@@ -1,4 +1,4 @@
-package com.example.alarmclock.ui
+package io.github.henriksten65.alarmclock.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +36,7 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.alarmclock.R
+import io.github.henriksten65.alarmclock.R
 
 /**
  * Time entry by typing digits on the numeric keyboard: "630" → 6:30, "1845" → 18:45.

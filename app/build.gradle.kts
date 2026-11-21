@@ -1,24 +1,52 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
+// Release signing details live outside git (see README "Release build").
+val keystoreProperties = Properties().apply {
+    rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+}
+
 android {
-    namespace = "com.example.alarmclock"
+    namespace = "io.github.henriksten65.alarmclock"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.alarmclock"
+        applicationId = "io.github.henriksten65.alarmclock"
         minSdk = 26
         targetSdk = 35
         versionCode = 6
         versionName = "2.1"
     }
 
+    base.archivesName = "AlarmClock-${defaultConfig.versionName}"
+
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
+        // Own id, so a debug build installs next to the release one (they're signed differently).
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
-            isMinifyEnabled = false
+            // Without keystore.properties the release APK is built unsigned (and can't be installed).
+            signingConfig = signingConfigs.findByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
