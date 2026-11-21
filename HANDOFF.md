@@ -1,6 +1,6 @@
 # Handoff — Android Alarm Clock app
 
-_Written 2026-11-20 at the end of a long session, updated 2026-11-21. Read this first, then `README.md`._
+_Written 2026-11-20 at the end of a long session, last updated 2026-11-21 after version 2.4. Read this first, then `README.md`._
 
 ## 1. Goal
 
@@ -18,7 +18,7 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.2** (`versionCode 7`), tagged `v2.2`: the release-build setup (app id, signing, minify).
 - **Version 2.3** (`versionCode 8`), tagged `v2.3`: "Skip next".
 - **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
-- GitHub Releases with the signed APK exist for `v2.3` and `v2.4` (`gh release create`).
+- GitHub Releases with the signed APK exist for `v2.3` and `v2.4` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   There are **no automated tests**.
 - Git history and tags:
@@ -41,8 +41,10 @@ asks for features one at a time, tests them in the emulator, and then says
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
   debug build (v2.1 code) with the user's alarm. `io.github.henriksten65.alarmclock` is the
-  release APK (2.2). `io.github.henriksten65.alarmclock.debug` is the current debug build. The two
-  new ones have no alarms and default settings, apart from Keyboard + 24-hour typing in the release app.
+  release APK (2.4). `io.github.henriksten65.alarmclock.debug` is the current debug build (2.4
+  code). The two new ones have no alarms and default settings (Appearance = Same as phone), apart
+  from Keyboard time entry + 24-hour typing in both.
+  The emulator's own dark theme is **off** (`cmd uimode night no`).
 - **Emulator state:** the AVD `Medium_Phone_API_37.0` was running as `emulator-5554`. It
   contains the user's own **09:54 one-time alarm (switched off)** in `com.example.alarmclock`; don't delete it. Settings on
   the emulator: time entry = Keyboard, "Typed times use 24-hour clock" = on, alarm sound =
@@ -54,6 +56,11 @@ asks for features one at a time, tests them in the emulator, and then says
 - **JDK:** the system Java and Android Studio's bundled JBR are both **JDK 25**, so Gradle
   must be **≥ 9.1**. Build with:
   `JAVA_HOME=/mnt/data2/dev/android-studio/jbr ./gradlew installDebug`
+- **GitHub Release** (when the user asks for "a release"): after the version commit + tag are
+  pushed, `gh release create vX <apk> --repo henriksten65/alarm-clock --title "Alarm Clock X"
+  --notes-file <notes> --verify-tag --latest`. Notes follow the earlier ones (`gh release view
+  v2.4`): New in X / Recent changes / Features / Install (2 steps, "installs over … keeps your
+  alarms") / SHA-256 of the APK. Then `gh release download` it again and compare the checksum.
 - **Release APK:** `./gradlew assembleRelease` →
   `app/build/outputs/apk/release/AlarmClock-<version>-release.apk`, signed with
   `~/.android/keystores/alarmclock-release.jks` (alias `alarmclock`). The passwords are in the
@@ -177,6 +184,10 @@ Tools used:
 - Alarm volume: **`adb shell cmd audio set-volume 4 N`** / `get-stream-volume 4`
   (`cmd media_session volume` silently doesn't work here).
 - DND: `cmd notification set_dnd none|priority|off`.
+- Phone dark theme: `cmd uimode night yes|no` (set back to `no`). To check colours without
+  looking, `screencap -p` and sample a background pixel (dark ≈ `(13,14,18)`, light ≈ `(250,248,254)`).
+- Ring screen on demand: ``T=$(adb shell date -d @$(( $(adb shell date +%s) + 60 )) +%H%M);
+  tools/emulator/mkalarm.sh $T``, then wait until `ui.py has Dismiss`.
 - Notifications: after tapping "Don't allow", `pm grant` alone doesn't work; first run
   `pm clear-permission-flags io.github.henriksten65.alarmclock android.permission.POST_NOTIFICATIONS user-set user-fixed`.
   Revoking notifications also reset `USE_FULL_SCREEN_INTENT`; fix with
@@ -203,8 +214,11 @@ Tools used:
 - **When the phone is unlocked and in use**, Android shows the alarm as a heads-up
   notification instead of opening the ring screen (platform behaviour; the user was told).
   Also cosmetic: the heads-up notification overlaps the top of the ring screen.
+- **Appearance is Compose-only:** the window background before Compose draws, and all
+  notifications (incl. the heads-up alarm), still follow the phone's theme. Not noticeable so far.
 - Remaining lint (harmless): `UseKtx` (`Uri.parse` in `AlarmService`, `AlarmSound`),
-  `InlinedApi` (a constant in `BootReceiver`), plus the version-upgrade warnings.
+  `InlinedApi` (a constant in `BootReceiver`), `ObsoleteSdkInt` (`mipmap-anydpi-v26` could be
+  `mipmap-anydpi`), plus the version-upgrade warnings.
 
 ## 9. Immediate next step
 
@@ -213,7 +227,8 @@ from §8 (extra features, or preparing for publishing). Follow the established w
 implement → build/install → test thoroughly on the emulator (and fix what you find) →
 update `README.md` → commit (one commit per item if asked) → when the user says "save as
 version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`, commit
-"Alarm Clock version X", and add an annotated tag `vX`.
+"Alarm Clock version X", and add an annotated tag `vX`. Push / make a GitHub Release only
+when asked (§3).
 
 ## 10. Key artifacts
 
@@ -223,4 +238,7 @@ version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`,
 - `HANDOFF.md`: this file
 - `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers
 - `app/src/main/res/raw/fallback_alarm.wav`: bundled fallback sound
+- Session transcript PDF: `/mnt/data2/dev/Claude/AlarmClock-2.4-session.pdf`, kept **outside
+  the repo** on purpose (user's choice; don't commit transcripts). It was rendered from the
+  session JSONL with reportlab in a throwaway venv, with the Gmail address redacted.
 - Claude memory: `~/.claude/projects/-mnt-data2-dev-Claude-alarm/memory/` (build environment, handoff pointer)
