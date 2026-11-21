@@ -17,6 +17,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.1** (`versionCode 6`), tagged `v2.1`: the 2026-11-21 features (see the table below).
 - **Version 2.2** (`versionCode 7`), tagged `v2.2`: the release-build setup (app id, signing, minify).
 - **Version 2.3** (`versionCode 8`), tagged `v2.3`: "Skip next".
+- **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
+- GitHub Releases with the signed APK exist for `v2.3` and `v2.4` (`gh release create`).
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   There are **no automated tests**.
 - Git history and tags:
@@ -33,8 +35,9 @@ asks for features one at a time, tests them in the emulator, and then says
   | `4f8e341` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
   | `v2.1` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
-  | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
+  | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
+  | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
   debug build (v2.1 code) with the user's alarm. `io.github.henriksten65.alarmclock` is the
@@ -214,7 +217,7 @@ version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`,
 
 ## 10. Key artifacts
 
-- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.3`),
+- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.4`),
   pushed to `github.com/henriksten65/alarm-clock`
 - `README.md`: user-facing feature list, layout, permissions (kept up to date with each change)
 - `HANDOFF.md`: this file
