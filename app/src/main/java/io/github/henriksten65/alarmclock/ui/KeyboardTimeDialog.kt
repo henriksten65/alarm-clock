@@ -19,6 +19,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -60,8 +61,11 @@ fun KeyboardTimeDialog(
         "%d%02d".format(shownHour, initialMinute)
     }
     // Start with everything selected so the first digit typed replaces the old time.
-    var field by remember { mutableStateOf(TextFieldValue(initialDigits, TextRange(0, initialDigits.length))) }
-    var pm by remember { mutableStateOf(initialHour >= 12) }
+    // Saveable, so typed digits survive rotating the phone.
+    var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initialDigits, TextRange(0, initialDigits.length)))
+    }
+    var pm by rememberSaveable { mutableStateOf(initialHour >= 12) }
 
     val result = parseDigits(field.text, is24Hour, pm)
     val confirm = { result?.let { (h, m) -> onConfirm(h, m) } }

@@ -21,8 +21,9 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.5** (`versionCode 10`), tagged `v2.5`: 147 automated tests; two small edit-dialog fixes they found.
 - GitHub Releases with the signed APK exist for `v2.3`, `v2.4` and `v2.5` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are **147 automated tests** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **156** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
+- After 2.5 (not yet a version): screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
 
   | Tag / commit | Contents |
@@ -152,6 +153,13 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   "Long" of 10 s was too short), plus a ✕ button.
 - **Next-alarm countdown rounds up** (consistent with the "Alarm set for …" toast) and
   recomputes on every minute boundary **and** whenever the alarm list changes.
+- **Screens** (after 2.5): the edit and settings dialogs scroll; dialog state is `rememberSaveable`
+  (the edited alarm via `AlarmSaver`, JSON), so rotation keeps open dialogs and changes; content is
+  capped at 640 dp (`MAX_CONTENT_WIDTH`); below 480 dp window height "Add alarm" moves to the top bar;
+  sound buttons in Settings use `FlowRow`; day buttons: touch area = 1/7 of the row × ≥ 48 dp, circle
+  ≤ 56 dp; switch/delete have "06:30 Work alarm" descriptions. Checked on the emulator at 360×640 dp,
+  411×914 dp, 800×1280 dp, landscape and font scale 1.5 (`wm size`/`wm density`/`settings put system
+  font_scale|user_rotation`; reset afterwards).
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)
@@ -215,7 +223,8 @@ Tools used:
   `BoxWithConstraints`. (2) `KeyboardTimeDialog` requested focus from outside the dialog's
   composition ("FocusRequester is not initialized"); the `LaunchedEffect` is now inside the dialog.
   (3) Robolectric's `AlarmManager` doesn't throw when exact alarms are disallowed, so `schedule()`'s
-  failure path is untested. (4) A crash or hang in one Compose test can make later ones in the same
+  failure path is untested. (4) `StateRestorationTester` with a dialog open sometimes hangs, so
+  rotation is tested only on the emulator (plus an `AlarmSaver` round-trip test). (5) A crash or hang in one Compose test can make later ones in the same
   JVM hang; when that happens, run classes one by one (`--tests …`) to find the culprit.
 
 ## 8. Open questions / unresolved issues

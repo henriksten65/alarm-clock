@@ -225,7 +225,7 @@ class AlarmListScreenTest {
     fun deleteAndUndo() {
         val alarm = add(Alarm(id = 1, hour = 7, minute = 0, label = "Work"))
         show()
-        compose.onNodeWithContentDescription("Delete alarm").performClick()
+        compose.onNodeWithContentDescription("Delete", substring = true).performClick()
         settle()
 
         assertTrue(repo.alarms.value.isEmpty())
@@ -243,7 +243,7 @@ class AlarmListScreenTest {
     fun undoGoesAwayAfter15Seconds() {
         add(Alarm(id = 1, hour = 7, minute = 0))
         show()
-        compose.onNodeWithContentDescription("Delete alarm").performClick()
+        compose.onNodeWithContentDescription("Delete", substring = true).performClick()
         settle()
         compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Undo").assertExists()

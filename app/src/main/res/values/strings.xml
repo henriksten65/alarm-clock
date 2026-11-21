@@ -4,7 +4,8 @@
     <string name="add_alarm">Add alarm</string>
     <string name="new_alarm">New alarm</string>
     <string name="edit_alarm">Edit alarm</string>
-    <string name="delete_alarm">Delete alarm</string>
+    <string name="delete_named_alarm">Delete %1$s</string>
+    <string name="alarm_name">%1$s alarm</string>
     <string name="label">Label</string>
     <string name="repeat">Repeat</string>
     <string name="every_day">Every day</string>

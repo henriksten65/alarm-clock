@@ -17,6 +17,9 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -71,13 +74,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -103,8 +111,21 @@ import java.util.Calendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import org.json.JSONObject
 
 private const val UNDO_TIMEOUT_MILLIS = 15_000L
+
+/** The alarm list and the warning banners don't get wider than this (tablets, landscape). */
+private val MAX_CONTENT_WIDTH = 640.dp
+
+/** Below this window height (e.g. a phone in landscape) "Add alarm" moves from the floating button into the top bar. */
+private const val SHORT_WINDOW_HEIGHT_DP = 480
+
+/** Keeps the alarm being edited across rotation and other configuration changes. */
+internal val AlarmSaver = Saver<Alarm?, String>(
+    save = { it?.toJson()?.toString() ?: "" },
+    restore = { if (it.isEmpty()) null else Alarm.fromJson(JSONObject(it)) },
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -114,8 +135,9 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
     val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
     val defaultSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
-    var editing by remember { mutableStateOf<Alarm?>(null) }
-    var showSettings by remember { mutableStateOf(false) }
+    // Saveable, so an open dialog (and what was changed in it) survives rotating the phone.
+    var editing by rememberSaveable(stateSaver = AlarmSaver) { mutableStateOf<Alarm?>(null) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
     val ringingAlarmId by AlarmService.ringingAlarmId.collectAsStateWithLifecycle()
 
     // Phone settings that can stop alarms from being heard, seen or dismissed.
@@ -181,12 +203,28 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
+    fun addAlarm() {
+        val now = Calendar.getInstance()
+        editing = Alarm(
+            id = repository.nextId(),
+            hour = now.get(Calendar.HOUR_OF_DAY),
+            minute = now.get(Calendar.MINUTE),
+        )
+    }
+
+    val shortWindow = LocalConfiguration.current.screenHeightDp < SHORT_WINDOW_HEIGHT_DP
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.app_name)) },
                 actions = {
+                    if (shortWindow) {
+                        IconButton(onClick = ::addAlarm) {
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_alarm))
+                        }
+                    }
                     IconButton(onClick = { showSettings = true }) {
                         Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
                     }
@@ -194,19 +232,17 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                val now = Calendar.getInstance()
-                editing = Alarm(
-                    id = repository.nextId(),
-                    hour = now.get(Calendar.HOUR_OF_DAY),
-                    minute = now.get(Calendar.MINUTE),
-                )
-            }) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_alarm))
+            // In a short window the floating button would cover much of the list, so it's in the top bar instead.
+            if (!shortWindow) {
+                FloatingActionButton(onClick = ::addAlarm) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_alarm))
+                }
             }
         },
     ) { innerPadding ->
-        Column(Modifier.padding(innerPadding).fillMaxSize()) {
+      // Centred and at most MAX_CONTENT_WIDTH wide, so cards don't stretch across a tablet.
+      Box(Modifier.padding(innerPadding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize()) {
             ringingAlarmId?.let { id ->
                 RingingCard(
                     alarm = alarms.firstOrNull { it.id == id },
@@ -310,6 +346,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                 }
             }
         }
+      }
     }
 
     editing?.let { alarm ->
@@ -339,6 +376,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SettingsDialog(
     timeEntryMode: TimeEntryMode,
@@ -432,7 +470,8 @@ private fun SettingsDialog(
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
                 Text(soundTitle, style = MaterialTheme.typography.bodyLarge)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                // Wraps onto two lines when both buttons don't fit (narrow screens, large text).
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                     OutlinedButton(onClick = { pickSystemSound.launch(AlarmSound.pickerIntent(context, alarmSoundUri)) }) {
                         Text(stringResource(R.string.phone_sounds))
                     }
@@ -647,11 +686,20 @@ private fun AlarmCard(
                     }
                 }
             }
+            // Screen readers say which alarm the button and switch belong to, e.g. "06:30 Work alarm".
+            val alarmName = stringResource(
+                R.string.alarm_name,
+                listOf(formatTime(context, alarm.hour, alarm.minute), alarm.label).filter { it.isNotBlank() }.joinToString(" "),
+            )
             IconButton(onClick = onDelete) {
-                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_alarm))
+                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_named_alarm, alarmName))
             }
             Spacer(Modifier.width(4.dp))
-            Switch(checked = alarm.enabled, onCheckedChange = onToggle)
+            Switch(
+                checked = alarm.enabled,
+                onCheckedChange = onToggle,
+                modifier = Modifier.semantics { contentDescription = alarmName },
+            )
         }
     }
 }
@@ -667,19 +715,20 @@ private fun EditAlarmDialog(
     onSave: (Alarm) -> Unit,
 ) {
     val context = LocalContext.current
-    var hour by remember(initial.id) { mutableIntStateOf(initial.hour) }
-    var minute by remember(initial.id) { mutableIntStateOf(initial.minute) }
-    var label by remember(initial.id) { mutableStateOf(initial.label) }
-    var days by remember(initial.id) { mutableIntStateOf(initial.days) }
-    var soundUri by remember(initial.id) { mutableStateOf(initial.soundUri) }
+    var hour by rememberSaveable(initial.id) { mutableIntStateOf(initial.hour) }
+    var minute by rememberSaveable(initial.id) { mutableIntStateOf(initial.minute) }
+    var label by rememberSaveable(initial.id) { mutableStateOf(initial.label) }
+    var days by rememberSaveable(initial.id) { mutableIntStateOf(initial.days) }
+    var soundUri by rememberSaveable(initial.id) { mutableStateOf(initial.soundUri) }
 
-    var pickingTime by remember { mutableStateOf(false) }
+    var pickingTime by rememberSaveable { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(if (isNew) R.string.new_alarm else R.string.edit_alarm)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Scrolls when the window is short (landscape, large text), like the settings dialog.
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 TextButton(onClick = { pickingTime = true }, modifier = Modifier.fillMaxWidth()) {
                     Text(formatTime(context, hour, minute), style = MaterialTheme.typography.displayMedium)
                 }

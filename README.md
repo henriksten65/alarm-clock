@@ -47,6 +47,15 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   heard: exact alarms not allowed, notifications off, full-screen alerts off (Android 14+),
   alarm volume at its lowest, Do Not Disturb silencing alarms
 
+### Screens
+
+- Works on small phones, large phones and tablets, in portrait and landscape. Dialogs scroll when
+  the window is short; on tablets the list is at most 640 dp wide and centred; in a short window
+  (landscape phone) "Add alarm" is in the top bar instead of a floating button.
+- Open dialogs, and what was changed in them, survive rotating the phone.
+- Large text (accessibility font size) wraps instead of being cut off; day buttons have touch areas
+  at least 48 dp tall; screen readers name the alarm on each switch and delete button.
+
 ## Opening the project
 
 1. Android Studio → **File › Open…** → select this `alarm` folder.
@@ -121,7 +130,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 147 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 156 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -137,9 +146,11 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
 | `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
 | `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings) |
+| `ui/ScreenSizesTest` | landscape, small phone, tablet and large-text layouts, touch-target sizes, screen-reader labels |
 
 The Android parts run on [Robolectric](https://robolectric.org/) (a simulated Android 15). Not covered:
-real sound output, the lock screen, real reboots and Direct Boot — check those on a device.
+real sound output, the lock screen, real reboots and Direct Boot, and rotating the phone with a dialog
+open — check those on a device.
 
 ## Testing tips
 
