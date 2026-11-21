@@ -16,6 +16,7 @@ asks for features one at a time, tests them in the emulator, and then says
   and `tools/emulator/` (see §7).
 - **Version 2.1** (`versionCode 6`), tagged `v2.1`: the 2026-11-21 features (see the table below).
 - **Version 2.2** (`versionCode 7`), tagged `v2.2`: the release-build setup (app id, signing, minify).
+- **Version 2.3** (`versionCode 8`), tagged `v2.3`: "Skip next".
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   There are **no automated tests**.
 - Git history and tags:
@@ -32,7 +33,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
   | `v2.1` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
-  | after `v2.2` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
+  | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
@@ -206,7 +207,7 @@ version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`,
 
 ## 10. Key artifacts
 
-- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.2`; no remote)
+- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.3`)
 - `README.md`: user-facing feature list, layout, permissions (kept up to date with each change)
 - `HANDOFF.md`: this file
 - `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers

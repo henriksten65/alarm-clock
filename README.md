@@ -73,7 +73,7 @@ keyPassword=…
 signed with the same key. Without the key you'd have to uninstall the app, deleting its alarms.
 
 To install: copy the APK to the phone, open it, and allow "Install unknown apps" for the app you
-opened it with. Or use `adb install AlarmClock-2.2-release.apk`. Debug builds have the id
+opened it with. Or use `adb install AlarmClock-2.3-release.apk`. Debug builds have the id
 `io.github.henriksten65.alarmclock.debug` and the name "Alarm Clock Debug", so they install next
 to the release app.
 
