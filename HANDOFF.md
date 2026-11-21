@@ -27,10 +27,10 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v1.1` | Settings dialog (gear icon); time entry by **clock dial** or **typing digits on the number keypad**; "Typed times use 24-hour clock" setting |
   | `v1.2` | **Weekday selection** per alarm (replaces "repeat daily", with migration); **alarm sound setting** (system alarm sounds or any audio file) |
   | `v1.3` | **Direct Boot** (rings after a reboot before unlock); **ringing alarm can always be stopped from the app** (Ringing card, app opens the ring screen); **warning banners** (exact alarms, notifications off, full-screen alerts off, alarm volume at its lowest, Do Not Disturb silencing alarms); **visible, cancellable, persistent snooze** |
-  | `9c47399` | Undo after deleting an alarm (15 s snackbar; ids never reused) |
-  | `4afdc1f` | "Next alarm: tomorrow 07:30 · in 9 h 20 min" summary |
-  | `fd4217a` | "Missed alarm" notification when an alarm rings 10 min undismissed |
-  | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
+  | `cc23d9a` | Undo after deleting an alarm (15 s snackbar; ids never reused) |
+  | `a5e7abb` | "Next alarm: tomorrow 07:30 · in 9 h 20 min" summary |
+  | `21149e2` | "Missed alarm" notification when an alarm rings 10 min undismissed |
+  | `4f8e341` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
   | `v2.1` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
@@ -61,7 +61,11 @@ asks for features one at a time, tests them in the emulator, and then says
 - SDK: `~/Android/Sdk` (`local.properties`); adb: `~/Android/Sdk/platform-tools/adb`.
 - Android Studio lives in `/mnt/data2/dev/android-studio`. "No target device found" in Studio
   just means the emulator isn't running; start it from Device Manager.
-- The repo has a **local** git identity (user `henriks`). Commit messages end with the
+- The repo has a **local** git identity: user `henriks`, email = the GitHub no-reply address
+  `17674524+henriksten65@users.noreply.github.com`. The history was rewritten to it before the first push,
+  so the user's Gmail address isn't public; keep it that way.
+- **GitHub:** public repo `github.com/henriksten65/alarm-clock` (remote `origin`). `gh` is logged
+  in as `henriksten65`. Push `main` and the tags (`git push --follow-tags`) when the user asks. Commit messages end with the
   `Co-Authored-By` attribution line that the harness specifies.
 
 ## 4. Architecture (where things are)
@@ -207,7 +211,8 @@ version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`,
 
 ## 10. Key artifacts
 
-- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.3`)
+- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`–`v2.3`),
+  pushed to `github.com/henriksten65/alarm-clock`
 - `README.md`: user-facing feature list, layout, permissions (kept up to date with each change)
 - `HANDOFF.md`: this file
 - `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers
