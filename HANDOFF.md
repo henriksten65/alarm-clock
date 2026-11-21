@@ -13,8 +13,8 @@ asks for features one at a time, tests them in the emulator, and then says
 ## 2. Current state (as of this handoff)
 
 - **Version 2.0** (`versionCode 5`), tagged `v2.0` on `main`. After the tag: this `HANDOFF.md`
-  and `tools/emulator/` (see §7), then the 2026-11-21 features (see the table below), not yet
-  saved as a version.
+  and `tools/emulator/` (see §7).
+- **Version 2.1** (`versionCode 6`), tagged `v2.1`: the 2026-11-21 features (see the table below).
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   There are **no automated tests**.
 - Git history and tags:
@@ -30,7 +30,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `fd4217a` | "Missed alarm" notification when an alarm rings 10 min undismissed |
   | `1a6cf6b` | Back on the ring screen doesn't hide a ringing alarm (shows a hint) |
   | `v2.0` | Version bump only (these four commits) |
-| after `v2.0` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
+| `v2.1` | Settings → Ringing (snooze length, stop-ringing-after, vibrate); sound per alarm; ringing service type `systemExempted` on 14+ (boot-window crash fix); alarms missed while the phone was off ring late or notify |
 
 - **Emulator state:** the AVD `Medium_Phone_API_37.0` was running as `emulator-5554`. It
   contains the user's own **09:54 one-time alarm (switched off)**; don't delete it. Settings on
@@ -189,7 +189,7 @@ version X", bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`,
 
 ## 10. Key artifacts
 
-- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`; no remote)
+- Repo: `/mnt/data2/dev/Claude/alarm` (branch `main`, tags `v1.0`–`v1.3`, `v2.0`, `v2.1`; no remote)
 - `README.md`: user-facing feature list, layout, permissions (kept up to date with each change)
 - `HANDOFF.md`: this file
 - `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers
