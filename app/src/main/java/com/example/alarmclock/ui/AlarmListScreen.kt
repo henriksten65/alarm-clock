@@ -35,12 +35,15 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -322,6 +325,9 @@ private fun SettingsDialog(
     val context = LocalContext.current
     val alarmSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
     val soundTitle = remember(alarmSoundUri) { AlarmSound.title(context, alarmSoundUri) }
+    val snoozeMinutes by settings.snoozeMinutes.collectAsStateWithLifecycle()
+    val autoStopMinutes by settings.autoStopMinutes.collectAsStateWithLifecycle()
+    val vibrate by settings.vibrate.collectAsStateWithLifecycle()
 
     // One of the phone's alarm sounds, via the system sound picker.
     val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -407,12 +413,62 @@ private fun SettingsDialog(
                         Text(stringResource(R.string.audio_file))
                     }
                 }
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                Text(
+                    stringResource(R.string.ringing),
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                MinutesSetting(R.string.snooze_length, snoozeMinutes, AppSettings.SNOOZE_MINUTE_OPTIONS, settings::setSnoozeMinutes)
+                MinutesSetting(R.string.auto_stop, autoStopMinutes, AppSettings.AUTO_STOP_MINUTE_OPTIONS, settings::setAutoStopMinutes)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp)
+                        .toggleable(value = vibrate, role = Role.Switch, onValueChange = settings::setVibrate),
+                ) {
+                    Text(stringResource(R.string.vibrate), modifier = Modifier.weight(1f))
+                    Spacer(Modifier.width(12.dp))
+                    Switch(checked = vibrate, onCheckedChange = null)
+                }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
         },
     )
+}
+
+/** "Snooze length    10 min ▾": a label with a drop-down list of minute values. */
+@Composable
+private fun MinutesSetting(labelRes: Int, minutes: Int, options: List<Int>, onChange: (Int) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+    ) {
+        Text(stringResource(labelRes), modifier = Modifier.weight(1f))
+        Box {
+            TextButton(onClick = { expanded = true }) {
+                Text(stringResource(R.string.minutes_short, minutes))
+                Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                options.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.minutes_short, option)) },
+                        onClick = {
+                            onChange(option)
+                            expanded = false
+                        },
+                    )
+                }
+            }
+        }
+    }
 }
 
 /** "Next alarm: tomorrow 07:30 · in 9 h 20 min" (or "No alarms on"), refreshed every minute. */

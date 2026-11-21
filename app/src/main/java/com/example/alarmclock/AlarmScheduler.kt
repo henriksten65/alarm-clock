@@ -9,8 +9,6 @@ import android.os.Build
 /** Wraps AlarmManager. Uses setAlarmClock() so alarms are exact and fire even in Doze. */
 object AlarmScheduler {
 
-    const val SNOOZE_MINUTES = 10
-
     /** Schedules [alarm] at [triggerAtMillis]. Returns false if exact alarms aren't permitted. */
     fun schedule(
         context: Context,
@@ -67,12 +65,12 @@ object AlarmScheduler {
             true
         }
 
-    /** Stops the ringing alarm and rings again in [SNOOZE_MINUTES] minutes. */
+    /** Stops the ringing alarm and rings again after the snooze length from the settings. */
     fun snooze(context: Context, alarmId: Int) {
         val repository = AlarmRepository.getInstance(context)
         repository.get(alarmId)?.let { alarm ->
             // Keep the alarm enabled while snoozed so the user can cancel the snooze with the switch.
-            val until = System.currentTimeMillis() + SNOOZE_MINUTES * 60_000L
+            val until = System.currentTimeMillis() + AppSettings.getInstance(context).snoozeMinutes.value * 60_000L
             val updated = alarm.copy(enabled = true, snoozedUntil = until)
             repository.upsert(updated)
             schedule(context, updated, until)

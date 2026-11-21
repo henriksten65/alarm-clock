@@ -50,11 +50,46 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putString(KEY_ALARM_SOUND, uri) }
     }
 
+    /** How long Snooze waits before the alarm rings again. */
+    private val _snoozeMinutes = MutableStateFlow(prefs.getInt(KEY_SNOOZE_MINUTES, DEFAULT_SNOOZE_MINUTES))
+    val snoozeMinutes: StateFlow<Int> = _snoozeMinutes.asStateFlow()
+
+    fun setSnoozeMinutes(minutes: Int) {
+        _snoozeMinutes.value = minutes
+        prefs.edit { putInt(KEY_SNOOZE_MINUTES, minutes) }
+    }
+
+    /** How long an alarm rings before it stops by itself (and a "Missed alarm" notification is shown). */
+    private val _autoStopMinutes = MutableStateFlow(prefs.getInt(KEY_AUTO_STOP_MINUTES, DEFAULT_AUTO_STOP_MINUTES))
+    val autoStopMinutes: StateFlow<Int> = _autoStopMinutes.asStateFlow()
+
+    fun setAutoStopMinutes(minutes: Int) {
+        _autoStopMinutes.value = minutes
+        prefs.edit { putInt(KEY_AUTO_STOP_MINUTES, minutes) }
+    }
+
+    /** Whether the phone vibrates while an alarm rings. */
+    private val _vibrate = MutableStateFlow(prefs.getBoolean(KEY_VIBRATE, true))
+    val vibrate: StateFlow<Boolean> = _vibrate.asStateFlow()
+
+    fun setVibrate(enabled: Boolean) {
+        _vibrate.value = enabled
+        prefs.edit { putBoolean(KEY_VIBRATE, enabled) }
+    }
+
     companion object {
+        val SNOOZE_MINUTE_OPTIONS = listOf(1, 5, 10, 15, 20, 30)
+        val AUTO_STOP_MINUTE_OPTIONS = listOf(1, 5, 10, 15, 20, 30)
+        private const val DEFAULT_SNOOZE_MINUTES = 10
+        private const val DEFAULT_AUTO_STOP_MINUTES = 10
+
         private const val PREFS_NAME = "settings"
         private const val KEY_TIME_ENTRY_MODE = "time_entry_mode"
         private const val KEY_KEYBOARD_24_HOUR = "keyboard_24_hour"
         private const val KEY_ALARM_SOUND = "alarm_sound_uri"
+        private const val KEY_SNOOZE_MINUTES = "snooze_minutes"
+        private const val KEY_AUTO_STOP_MINUTES = "auto_stop_minutes"
+        private const val KEY_VIBRATE = "vibrate"
 
         @Volatile
         private var instance: AppSettings? = null

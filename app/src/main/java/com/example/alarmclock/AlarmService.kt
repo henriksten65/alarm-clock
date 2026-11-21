@@ -34,8 +34,9 @@ class AlarmService : Service() {
     private var player: MediaPlayer? = null
     private var vibrator: Vibrator? = null
     private val handler = Handler(Looper.getMainLooper())
-    /** True when the alarm stopped by itself after ringing [AUTO_STOP_MILLIS] without Dismiss/Snooze. */
+    /** True when the alarm stopped by itself after ringing [autoStopMinutes] without Dismiss/Snooze. */
     private var timedOut = false
+    private var autoStopMinutes = 0
     private val autoStop = Runnable {
         timedOut = true
         stopSelf()
@@ -68,8 +69,9 @@ class AlarmService : Service() {
         startRinging()
 
         // Don't ring forever if nobody is around.
+        autoStopMinutes = AppSettings.getInstance(this).autoStopMinutes.value
         handler.removeCallbacks(autoStop)
-        handler.postDelayed(autoStop, AUTO_STOP_MILLIS)
+        handler.postDelayed(autoStop, autoStopMinutes * 60_000L)
         return START_NOT_STICKY
     }
 
@@ -103,7 +105,7 @@ class AlarmService : Service() {
                 Uri.parse("android.resource://$packageName/${R.raw.fallback_alarm}"),
             ).firstNotNullOfOrNull { createPlayer(it) }
         }
-        if (vibrator == null) {
+        if (vibrator == null && AppSettings.getInstance(this).vibrate.value) {
             vibrator = (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 getSystemService(VibratorManager::class.java).defaultVibrator
             } else {
@@ -172,7 +174,7 @@ class AlarmService : Service() {
         val notification = NotificationCompat.Builder(this, MISSED_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_alarm)
             .setContentTitle(getString(R.string.missed_alarm, what))
-            .setContentText(getString(R.string.missed_alarm_text, AUTO_STOP_MILLIS / 60_000L))
+            .setContentText(resources.getQuantityString(R.plurals.missed_alarm_text, autoStopMinutes, autoStopMinutes))
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setWhen(System.currentTimeMillis())
             .setShowWhen(true)
@@ -220,6 +222,5 @@ class AlarmService : Service() {
         private const val MISSED_NOTIFICATION_ID_BASE = 1000
 
         private const val NOTIFICATION_ID = 1
-        private const val AUTO_STOP_MILLIS = 10 * 60_000L
     }
 }

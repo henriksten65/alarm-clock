@@ -28,7 +28,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.alarmclock.AlarmScheduler
+import com.example.alarmclock.AppSettings
 import com.example.alarmclock.R
 import com.example.alarmclock.formatTime
 import kotlinx.coroutines.delay
@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun RingScreen(label: String, onSnooze: () -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val snoozeMinutes = remember { AppSettings.getInstance(context).snoozeMinutes.value }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -71,7 +72,7 @@ fun RingScreen(label: String, onSnooze: () -> Unit, onDismiss: () -> Unit) {
             }
             Spacer(Modifier.height(16.dp))
             OutlinedButton(onClick = onSnooze, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text(stringResource(R.string.snooze_minutes, AlarmScheduler.SNOOZE_MINUTES))
+                Text(stringResource(R.string.snooze_minutes, snoozeMinutes))
             }
         }
     }

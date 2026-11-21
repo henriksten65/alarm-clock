@@ -22,7 +22,10 @@
     <string name="channel_name">Ringing alarms</string>
     <string name="missed_channel_name">Missed alarms</string>
     <string name="missed_alarm">Missed alarm: %1$s</string>
-    <string name="missed_alarm_text">Rang for %1$d minutes without being dismissed</string>
+    <plurals name="missed_alarm_text">
+        <item quantity="one">Rang for %1$d minute without being dismissed</item>
+        <item quantity="other">Rang for %1$d minutes without being dismissed</item>
+    </plurals>
     <string name="alarm_set_in">Alarm set for %1$d h %2$d min from now</string>
     <plurals name="alarm_set_in_days">
         <item quantity="one">Alarm set for %1$d day %2$d h %3$d min from now</item>
@@ -65,4 +68,9 @@
     <string name="default_alarm_sound">Default alarm sound</string>
     <string name="phone_sounds">Phone sounds</string>
     <string name="audio_file">Audio file</string>
+    <string name="ringing">Ringing</string>
+    <string name="snooze_length">Snooze length</string>
+    <string name="auto_stop">Stop ringing after</string>
+    <string name="vibrate">Vibrate</string>
+    <string name="minutes_short">%1$d min</string>
 </resources>
