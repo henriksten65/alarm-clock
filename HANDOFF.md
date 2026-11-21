@@ -20,9 +20,10 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
 - **Version 2.5** (`versionCode 10`), tagged `v2.5`: 147 automated tests; two small edit-dialog fixes they found.
 - **Version 2.6** (`versionCode 11`), tagged `v2.6`: screen sizes, landscape, rotation, large text, screen readers (156 tests).
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.5` and `v2.6` (latest); see §3 for how they're made.
+- **Version 2.7** (`versionCode 12`), tagged `v2.7`: translations (sv, de, fr, es, pt); 162 tests.
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.6` and `v2.7` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are automated tests (now **156** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **162** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
 - 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
@@ -42,6 +43,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v2.7` | **Translations**: Swedish, German, French, Spanish, Portuguese; per-app language on Android 13+; long button texts on cards wrap |
   | `v2.6` | **Screens**: dialogs scroll and survive rotation, landscape top-bar "Add", tablet width cap, large-text wrapping, 48 dp day touch targets, screen-reader names on switch/delete |
   | `v2.5` | **Automated tests** (147, `./gradlew testDebugUnitTest`); day buttons sized explicitly; keyboard focus requested inside the time dialog |
 
