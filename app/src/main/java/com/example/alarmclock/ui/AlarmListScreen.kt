@@ -112,6 +112,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     val alarms by repository.alarms.collectAsStateWithLifecycle()
     val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
     val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
+    val defaultSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
     var editing by remember { mutableStateOf<Alarm?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     val ringingAlarmId by AlarmService.ringingAlarmId.collectAsStateWithLifecycle()
@@ -293,6 +294,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
             isNew = repository.get(alarm.id) == null,
             timeEntryMode = timeEntryMode,
             keyboard24Hour = keyboard24Hour,
+            defaultSoundUri = defaultSoundUri,
             onDismiss = { editing = null },
             onSave = {
                 enableAndSchedule(it)
@@ -413,6 +415,12 @@ private fun SettingsDialog(
                         Text(stringResource(R.string.audio_file))
                     }
                 }
+                Text(
+                    stringResource(R.string.alarm_sound_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
@@ -589,6 +597,7 @@ private fun EditAlarmDialog(
     isNew: Boolean,
     timeEntryMode: TimeEntryMode,
     keyboard24Hour: Boolean,
+    defaultSoundUri: String?,
     onDismiss: () -> Unit,
     onSave: (Alarm) -> Unit,
 ) {
@@ -597,6 +606,7 @@ private fun EditAlarmDialog(
     var minute by remember(initial.id) { mutableIntStateOf(initial.minute) }
     var label by remember(initial.id) { mutableStateOf(initial.label) }
     var days by remember(initial.id) { mutableIntStateOf(initial.days) }
+    var soundUri by remember(initial.id) { mutableStateOf(initial.soundUri) }
 
     var pickingTime by remember { mutableStateOf(false) }
 
@@ -624,11 +634,12 @@ private fun EditAlarmDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                AlarmSoundChooser(soundUri, defaultSoundUri, onChange = { soundUri = it })
             }
         },
         confirmButton = {
             TextButton(onClick = {
-                onSave(initial.copy(hour = hour, minute = minute, label = label.trim(), days = days))
+                onSave(initial.copy(hour = hour, minute = minute, label = label.trim(), days = days, soundUri = soundUri))
             }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
@@ -645,6 +656,67 @@ private fun EditAlarmDialog(
         when (timeEntryMode) {
             TimeEntryMode.DIAL -> TimePickerDialog(hour, minute, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
             TimeEntryMode.KEYBOARD -> KeyboardTimeDialog(hour, minute, keyboard24Hour, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
+        }
+    }
+}
+
+/**
+ * The alarm's own sound, or "Default (…)" for the sound from the settings, with a menu to pick
+ * one of the phone's alarm sounds or an audio file, or to go back to the default.
+ */
+@Composable
+private fun AlarmSoundChooser(soundUri: String?, defaultSoundUri: String?, onChange: (String?) -> Unit) {
+    val context = LocalContext.current
+    var menuOpen by remember { mutableStateOf(false) }
+    val title = remember(soundUri, defaultSoundUri) {
+        if (soundUri != null) {
+            AlarmSound.title(context, soundUri)
+        } else {
+            context.getString(R.string.sound_default, AlarmSound.title(context, defaultSoundUri))
+        }
+    }
+    val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
+            ?.let { onChange(AlarmSound.accept(context, it)) }
+    }
+    val pickAudioFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) onChange(AlarmSound.accept(context, uri))
+    }
+
+    Column {
+        Text(stringResource(R.string.sound), style = MaterialTheme.typography.titleSmall)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            Box {
+                TextButton(onClick = { menuOpen = true }) { Text(stringResource(R.string.change)) }
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.use_default_sound)) },
+                        enabled = soundUri != null,
+                        onClick = {
+                            menuOpen = false
+                            onChange(null)
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.phone_sounds)) },
+                        onClick = {
+                            menuOpen = false
+                            // No "Default" entry here: "Default" for an alarm means the settings' sound.
+                            pickSystemSound.launch(AlarmSound.pickerIntent(context, soundUri ?: defaultSoundUri, showDefault = false))
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.audio_file)) },
+                        onClick = {
+                            menuOpen = false
+                            pickAudioFile.launch(arrayOf("audio/*"))
+                        },
+                    )
+                }
+            }
         }
     }
 }

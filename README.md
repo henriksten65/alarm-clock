@@ -6,22 +6,26 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 
 - "Next alarm: tomorrow 07:30 · in 9 h 20 min" summary at the top (includes snoozes; updates every minute)
 - List of alarms, sorted by time, with an on/off switch and delete button (**Undo** for 15 s after deleting)
-- Add / edit an alarm: time, optional label, and the weekdays it repeats on (none = rings once;
-  the list shows "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri")
+- Add / edit an alarm: time, optional label, the weekdays it repeats on (none = rings once;
+  the list shows "Every day", "Weekdays", "Weekends" or e.g. "Mon, Wed, Fri"), and its **sound**:
+  "Default" (the sound from Settings), one of the phone's alarm sounds, or any audio file
 - Settings (gear icon): choose how the time is entered — **Clock dial** (Material 3 time picker)
   or **Keyboard**, where you type the digits on the number keypad (`630` → 6:30, `1845` → 18:45,
   with an AM/PM switch on 12-hour phones). The **Typed times use 24-hour clock** switch makes
   typed digits always 24-hour (no AM/PM), whatever the phone's time format
 - Settings → **Alarm sound**: one of the phone's alarm sounds (system sound picker) or any audio
-  file (document picker; the app keeps read access to it). Falls back to the default alarm sound
-  if the chosen one can't be played
+  file (document picker; the app keeps read access to it), used by alarms without their own sound.
+  Falls back to the default alarm sound if the chosen one can't be played. Read access to files no
+  alarm uses any more is given back when the app starts
+- Settings → **Ringing**: snooze length and "Stop ringing after" (1, 5, 10, 15, 20 or 30 min;
+  default 10) and **Vibrate** on/off
 - Exact alarms via `AlarmManager.setAlarmClock()` (ring on time even in Doze; shows the
   alarm icon in the status bar)
 - When an alarm rings: looping alarm sound + vibration from a foreground service,
   a full-screen ring screen (also over the lock screen), and a notification with
-  **Snooze** (10 min) and **Dismiss**
+  **Snooze** and **Dismiss**
 - On the ring screen, Back doesn't hide a ringing alarm; it shows "Tap Dismiss or Snooze to stop the alarm"
-- Rings stop automatically after 10 minutes, followed by a "Missed alarm: 06:15 · Label" notification
+- Rings stop automatically after the "Stop ringing after" time, followed by a "Missed alarm: 06:15 · Label" notification
 - One-time alarms switch themselves off after ringing; repeating alarms reschedule for the next selected day
 - Alarms are re-registered after reboot, app update, and time / time-zone changes — and they
   ring even if the phone restarted and hasn't been unlocked yet (Direct Boot: alarm data lives in
@@ -56,7 +60,7 @@ All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgr
 app/src/main/java/com/example/alarmclock/
   Alarm.kt            data class + next-trigger calculation + JSON (de)serialisation
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
-  AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound), SharedPreferences + StateFlow
+  AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound, snooze, auto-stop, vibrate), SharedPreferences + StateFlow
   AlarmSound.kt       alarm sound picker intent, display name, persisting file access
   AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
   Storage.kt          device-protected SharedPreferences (Direct Boot) + migration

@@ -27,12 +27,15 @@ object AlarmSound {
         } ?: uri.lastPathSegment ?: uriString
     }
 
-    /** Intent for the system's alarm sound picker, with [currentUri] preselected. */
-    fun pickerIntent(context: Context, currentUri: String?): Intent =
+    /**
+     * Intent for the system's alarm sound picker, with [currentUri] preselected. [showDefault] adds
+     * the picker's "Default" entry (the phone's default alarm sound).
+     */
+    fun pickerIntent(context: Context, currentUri: String?, showDefault: Boolean = true): Intent =
         Intent(RingtoneManager.ACTION_RINGTONE_PICKER)
             .putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
             .putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, context.getString(R.string.alarm_sound))
-            .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, showDefault)
             .putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
             .putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, Settings.System.DEFAULT_ALARM_ALERT_URI)
             .putExtra(
@@ -41,21 +44,36 @@ object AlarmSound {
             )
 
     /**
-     * Stores a newly chosen sound. Audio files picked with the document picker keep a
-     * persistable read permission so the alarm can still play them after a reboot; the
-     * permission for the previously chosen file is given back.
+     * Prepares a newly picked sound for storing and returns the string to store (null for the
+     * phone's default alarm sound). Audio files picked with the document picker keep a
+     * persistable read permission so the alarm can still play them after a reboot.
      */
-    fun choose(context: Context, settings: AppSettings, uri: Uri?) {
-        val resolver = context.contentResolver
-        settings.alarmSoundUri.value?.let(Uri::parse)?.let { old ->
-            if (old != uri && DocumentsContract.isDocumentUri(context, old)) {
-                runCatching { resolver.releasePersistableUriPermission(old, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
-            }
-        }
+    fun accept(context: Context, uri: Uri?): String? {
         if (uri != null && DocumentsContract.isDocumentUri(context, uri)) {
-            resolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         // Picking "Default" in the system picker means: follow the phone's default alarm sound.
-        settings.setAlarmSoundUri(uri?.takeIf { it != Settings.System.DEFAULT_ALARM_ALERT_URI }?.toString())
+        return uri?.takeIf { it != Settings.System.DEFAULT_ALARM_ALERT_URI }?.toString()
+    }
+
+    /** Stores a newly chosen sound in the settings (the sound for alarms without their own). */
+    fun choose(context: Context, settings: AppSettings, uri: Uri?) {
+        settings.setAlarmSoundUri(accept(context, uri))
+    }
+
+    /**
+     * Gives back the read permission for audio files that neither the settings nor any alarm use
+     * any more. Called when the app starts rather than on every change, so "Undo" after deleting
+     * an alarm, or cancelling the edit dialog, can't leave an alarm with a file it can't read.
+     */
+    fun releaseUnused(context: Context) {
+        val inUse = buildSet {
+            AppSettings.getInstance(context).alarmSoundUri.value?.let(::add)
+            AlarmRepository.getInstance(context).alarms.value.forEach { alarm -> alarm.soundUri?.let(::add) }
+        }
+        val resolver = context.contentResolver
+        resolver.persistedUriPermissions
+            .filter { it.uri.toString() !in inUse }
+            .forEach { runCatching { resolver.releasePersistableUriPermission(it.uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) } }
     }
 }

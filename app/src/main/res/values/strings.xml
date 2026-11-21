@@ -73,4 +73,9 @@
     <string name="auto_stop">Stop ringing after</string>
     <string name="vibrate">Vibrate</string>
     <string name="minutes_short">%1$d min</string>
+    <string name="alarm_sound_hint">Used by alarms that don\'t have their own sound.</string>
+    <string name="sound">Sound</string>
+    <string name="sound_default">Default (%1$s)</string>
+    <string name="use_default_sound">Default (from Settings)</string>
+    <string name="change">Change</string>
 </resources>

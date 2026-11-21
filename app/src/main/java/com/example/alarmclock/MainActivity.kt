@@ -57,6 +57,9 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        // Only on a fresh start: during a rotation an "Undo" for a deleted alarm may still be showing.
+        if (savedInstanceState == null) AlarmSound.releaseUnused(this)
+
         val repository = AlarmRepository.getInstance(this)
         setContent {
             AlarmClockTheme {

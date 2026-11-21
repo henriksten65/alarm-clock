@@ -66,7 +66,7 @@ class AlarmService : Service() {
             },
         )
 
-        startRinging()
+        startRinging(alarm)
 
         // Don't ring forever if nobody is around.
         autoStopMinutes = AppSettings.getInstance(this).autoStopMinutes.value
@@ -91,12 +91,12 @@ class AlarmService : Service() {
         super.onDestroy()
     }
 
-    private fun startRinging() {
+    private fun startRinging(alarm: Alarm?) {
         if (player == null) {
-            // The user's chosen sound first; fall back to the system defaults if it can't be played
-            // (e.g. the audio file was deleted).
+            // The alarm's own sound or the one from the settings first; fall back to the system
+            // defaults if it can't be played (e.g. the audio file was deleted).
             player = listOfNotNull(
-                AppSettings.getInstance(this).alarmSoundUri.value?.let(Uri::parse),
+                (alarm?.soundUri ?: AppSettings.getInstance(this).alarmSoundUri.value)?.let(Uri::parse),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE),
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),

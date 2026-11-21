@@ -13,6 +13,9 @@ const val EXTRA_ALARM_ID = "com.example.alarmclock.EXTRA_ALARM_ID"
  * 0 means a one-time alarm.
  *
  * [snoozedUntil] is the epoch millis a snoozed alarm will ring again, or 0 if not snoozed.
+ *
+ * [soundUri] is this alarm's own sound (a ringtone or audio-file URI), or null to use the
+ * alarm sound from the settings.
  */
 data class Alarm(
     val id: Int,
@@ -22,6 +25,7 @@ data class Alarm(
     val enabled: Boolean = true,
     val days: Int = 0,
     val snoozedUntil: Long = 0L,
+    val soundUri: String? = null,
 ) {
     val repeats: Boolean get() = days != 0
 
@@ -58,6 +62,7 @@ data class Alarm(
         .put("enabled", enabled)
         .put("days", days)
         .put("snoozedUntil", snoozedUntil)
+        .apply { if (soundUri != null) put("sound", soundUri) }
 
     companion object {
         const val EVERY_DAY = 0b1111111
@@ -82,6 +87,7 @@ data class Alarm(
                 0
             },
             snoozedUntil = json.optLong("snoozedUntil", 0L),
+            soundUri = json.optString("sound").ifEmpty { null },
         )
     }
 }
