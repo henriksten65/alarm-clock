@@ -76,7 +76,7 @@ asks for features one at a time, tests them in the emulator, and then says
 |---|---|
 | `Alarm.kt` | Data class: `id, hour, minute, label, enabled, days` (bitmask, bit `d-1` per `Calendar` day; 0 = one-time), `snoozedUntil` (epoch ms, 0 = none), `soundUri` (null = sound from Settings), `skippedAt` (one skipped occurrence, epoch ms; only counts while it equals the next occurrence, so it lapses by itself). `nextTriggerMillis()`, `nextRingMillis()` (snooze-aware), JSON incl. migration from old `repeatDaily` |
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
-| `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate` |
+| `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate`, `themeMode` (SYSTEM/LIGHT/DARK) |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
 | `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll(catchUpMissed)`, `snooze`, `cancelSnooze`, `stopRinging`. Remembers each alarm's due time (`due_times` prefs) to find alarms missed while the phone was off |
 | `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |
@@ -112,6 +112,9 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   Settings sound). File read permissions are released only at a fresh app start, when no alarm
   or setting uses the file, so Undo/cancel never leaves an alarm with an unreadable file.
 - **Snooze length, auto-stop and vibration are global settings** (like the alarm sound).
+- **Appearance (light/dark)** is applied in Compose only: `AlarmClockTheme` reads `themeMode` and
+  re-calls `enableEdgeToEdge` with a matching `SystemBarStyle` so the status-bar icons contrast.
+  The window theme (`themes.xml`) and notifications still follow the phone; no AppCompat needed.
 - **Missed while off**: after boot / app update (`catchUpMissed`; not on time/zone changes), an
   alarm whose stored due time passed rings now if less than the auto-stop time late, otherwise
   posts "Missed alarm … The phone was off when it was due" (one-time → off, repeating → next day).

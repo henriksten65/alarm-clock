@@ -15,6 +15,14 @@ enum class TimeEntryMode {
     KEYBOARD,
 }
 
+/** Light or dark colours for the app's screens. */
+enum class ThemeMode {
+    /** Follow the phone's dark theme setting. */
+    SYSTEM,
+    LIGHT,
+    DARK,
+}
+
 /** User preferences, stored in SharedPreferences and exposed as [StateFlow]s for the UI. */
 class AppSettings private constructor(context: Context) {
 
@@ -77,6 +85,19 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putBoolean(KEY_VIBRATE, enabled) }
     }
 
+    /** Whether the app uses light or dark colours, or follows the phone. */
+    private val _themeMode = MutableStateFlow(
+        prefs.getString(KEY_THEME_MODE, null)
+            ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
+            ?: ThemeMode.SYSTEM,
+    )
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
+
+    fun setThemeMode(mode: ThemeMode) {
+        _themeMode.value = mode
+        prefs.edit { putString(KEY_THEME_MODE, mode.name) }
+    }
+
     companion object {
         val SNOOZE_MINUTE_OPTIONS = listOf(1, 5, 10, 15, 20, 30)
         val AUTO_STOP_MINUTE_OPTIONS = listOf(1, 5, 10, 15, 20, 30)
@@ -90,6 +111,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_SNOOZE_MINUTES = "snooze_minutes"
         private const val KEY_AUTO_STOP_MINUTES = "auto_stop_minutes"
         private const val KEY_VIBRATE = "vibrate"
+        private const val KEY_THEME_MODE = "theme_mode"
 
         @Volatile
         private var instance: AppSettings? = null

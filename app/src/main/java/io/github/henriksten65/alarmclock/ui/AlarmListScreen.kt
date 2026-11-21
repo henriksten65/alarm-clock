@@ -92,6 +92,7 @@ import io.github.henriksten65.alarmclock.AlarmService
 import io.github.henriksten65.alarmclock.AlarmSound
 import io.github.henriksten65.alarmclock.AppSettings
 import io.github.henriksten65.alarmclock.R
+import io.github.henriksten65.alarmclock.ThemeMode
 import io.github.henriksten65.alarmclock.TimeEntryMode
 import io.github.henriksten65.alarmclock.dayAndTimeText
 import io.github.henriksten65.alarmclock.formatTime
@@ -353,6 +354,7 @@ private fun SettingsDialog(
     val snoozeMinutes by settings.snoozeMinutes.collectAsStateWithLifecycle()
     val autoStopMinutes by settings.autoStopMinutes.collectAsStateWithLifecycle()
     val vibrate by settings.vibrate.collectAsStateWithLifecycle()
+    val themeMode by settings.themeMode.collectAsStateWithLifecycle()
 
     // One of the phone's alarm sounds, via the system sound picker.
     val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -464,6 +466,37 @@ private fun SettingsDialog(
                     Text(stringResource(R.string.vibrate), modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(12.dp))
                     Switch(checked = vibrate, onCheckedChange = null)
+                }
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        stringResource(R.string.appearance),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    listOf(
+                        ThemeMode.SYSTEM to R.string.theme_system,
+                        ThemeMode.LIGHT to R.string.theme_light,
+                        ThemeMode.DARK to R.string.theme_dark,
+                    ).forEach { (mode, labelRes) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .selectable(
+                                    selected = mode == themeMode,
+                                    role = Role.RadioButton,
+                                    onClick = { settings.setThemeMode(mode) },
+                                ),
+                        ) {
+                            RadioButton(selected = mode == themeMode, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(labelRes))
+                        }
+                    }
                 }
             }
         },

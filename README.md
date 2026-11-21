@@ -19,6 +19,7 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   alarm uses any more is given back when the app starts
 - Settings → **Ringing**: snooze length and "Stop ringing after" (1, 5, 10, 15, 20 or 30 min;
   default 10) and **Vibrate** on/off
+- Settings → **Appearance**: light or dark colours, or **Same as phone** (default)
 - Exact alarms via `AlarmManager.setAlarmClock()` (ring on time even in Doze; shows the
   alarm icon in the status bar)
 - When an alarm rings: looping alarm sound + vibration from a foreground service,
@@ -88,7 +89,7 @@ All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgr
 app/src/main/java/io/github/henriksten65/alarmclock/
   Alarm.kt            data class + next-trigger calculation + JSON (de)serialisation
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
-  AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound, snooze, auto-stop, vibrate), SharedPreferences + StateFlow
+  AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound, snooze, auto-stop, vibrate, theme), SharedPreferences + StateFlow
   AlarmSound.kt       alarm sound picker intent, display name, persisting file access
   AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
   Storage.kt          device-protected SharedPreferences (Direct Boot) + migration

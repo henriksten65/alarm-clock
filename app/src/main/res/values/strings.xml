@@ -72,6 +72,10 @@
     <string name="snooze_length">Snooze length</string>
     <string name="auto_stop">Stop ringing after</string>
     <string name="vibrate">Vibrate</string>
+    <string name="appearance">Appearance</string>
+    <string name="theme_system">Same as phone</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
     <string name="minutes_short">%1$d min</string>
     <string name="alarm_sound_hint">Used by alarms that don\'t have their own sound.</string>
     <string name="sound">Sound</string>
