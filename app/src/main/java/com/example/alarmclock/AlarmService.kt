@@ -59,10 +59,12 @@ class AlarmService : Service() {
             this,
             NOTIFICATION_ID,
             buildNotification(alarmId, alarm),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
-            } else {
-                0
+            when {
+                // The type meant for alarm apps. A mediaPlayback service may not be started in the
+                // first seconds after boot / first unlock (Android 15+), and an alarm can ring then.
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> ServiceInfo.FOREGROUND_SERVICE_TYPE_SYSTEM_EXEMPTED
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK
+                else -> 0
             },
         )
 

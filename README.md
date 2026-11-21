@@ -81,7 +81,7 @@ app/src/main/java/com/example/alarmclock/
 | `USE_EXACT_ALARM` (API 33+) / `SCHEDULE_EXACT_ALARM` (API 31–32) | exact alarm times |
 | `POST_NOTIFICATIONS` | ringing notification (asked at first launch on Android 13+) |
 | `USE_FULL_SCREEN_INTENT` | show the ring screen over the lock screen |
-| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK` | play the alarm sound |
+| `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SYSTEM_EXEMPTED` (Android 14+), `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (older) | play the alarm sound from a foreground service |
 | `RECEIVE_BOOT_COMPLETED` | restore alarms after reboot |
 | `VIBRATE`, `WAKE_LOCK` | vibration, keep the device awake while ringing |
 
