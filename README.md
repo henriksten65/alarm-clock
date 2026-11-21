@@ -47,6 +47,13 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   heard: exact alarms not allowed, notifications off, full-screen alerts off (Android 14+),
   alarm volume at its lowest, Do Not Disturb silencing alarms
 
+### Languages
+
+English, Swedish, German, French, Spanish and Portuguese (Brazilian wording). The app follows the
+phone's language; on Android 13+ it can also be set per app (Settings › Apps › Alarm Clock › Language).
+Weekday names and time formats come from the language and region automatically.
+Translations live in `app/src/main/res/values-<lang>/strings.xml` (`values/` is English).
+
 ### Screens
 
 - Works on small phones, large phones and tablets, in portrait and landscape. Dialogs scroll when
@@ -130,7 +137,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 156 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 162 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -146,6 +153,7 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
 | `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
 | `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings) |
+| `TranslationsTest` | every language has every string with the same placeholders and plural forms; all strings format at runtime |
 | `ui/ScreenSizesTest` | landscape, small phone, tablet and large-text layouts, touch-target sizes, screen-reader labels |
 
 The Android parts run on [Robolectric](https://robolectric.org/) (a simulated Android 15). Not covered:

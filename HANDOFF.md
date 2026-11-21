@@ -162,6 +162,14 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   ≤ 56 dp; switch/delete have "06:30 Work alarm" descriptions. Checked on the emulator at 360×640 dp,
   411×914 dp, 800×1280 dp, landscape and font scale 1.5 (`wm size`/`wm density`/`settings put system
   font_scale|user_rotation`; reset afterwards).
+- **Translations** (2.7): `values-sv|de|fr|es|pt` (pt = Brazilian wording), plus `app_name` in
+  `src/debug/res/values-*`. `androidResources.localeFilters` keeps only these languages (no mixed
+  library strings); `generateLocaleConfig` + `res/resources.properties` give Android 13+'s per-app
+  language setting. fr/es/pt plurals have `one`/`many`/`other`. `TranslationsTest` checks keys,
+  placeholders and plural forms. Card rows (snooze/skip) use `FlowRow` so long button texts
+  ("Nicht auslassen") move to their own line. Checked every language on the emulator with
+  `cmd locale set-app-locales <pkg> --locales de-SE` (reset with `--locales ""`). Note: a plain
+  `en` app locale means en-US, i.e. a 12-hour clock, which breaks `mkalarm.sh`.
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)
@@ -178,6 +186,8 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   or `pm disable` of a component (not allowed for the shell). What worked: switch the alarms off,
   wait past the due time, write the saved `alarms.xml`/`due_times.xml` back with
   `run-as … sh -c 'cat > …'` (app force-stopped), then `adb reboot`.
+  But careful: on 2026-11-21 a test alarm set just before `am force-stop` never rang and was gone
+  from `dumpsys alarm`, so don't force-stop between creating a test alarm and its ring.
 
 ## 7. Testing workflow (how things were verified)
 
@@ -226,13 +236,15 @@ Tools used:
   composition ("FocusRequester is not initialized"); the `LaunchedEffect` is now inside the dialog.
   (3) Robolectric's `AlarmManager` doesn't throw when exact alarms are disallowed, so `schedule()`'s
   failure path is untested. (4) `StateRestorationTester` with a dialog open sometimes hangs, so
-  rotation is tested only on the emulator (plus an `AlarmSaver` round-trip test). (5) A crash or hang in one Compose test can make later ones in the same
+  rotation is tested only on the emulator (plus an `AlarmSaver` round-trip test). (5) Robolectric's
+  text measuring differs from a phone's: it did not reproduce the squeezed German button, so that
+  is checked on the emulator only. (6) A crash or hang in one Compose test can make later ones in the same
   JVM hang; when that happens, run classes one by one (`--tests …`) to find the culprit.
 
 ## 8. Open questions / unresolved issues
 
 - **Not yet done from the improvement list:**
-  - *Extra features:* translations (all strings are English).
+  - *Extra features:* (translations done in 2.7: sv, de, fr, es, pt).
   - *Publishing:* the user only wants an APK to install directly for now (2026-11-21). Still open
     for a later Play release: outdated libraries (lint: AGP 9.5.1,
     Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 36…); Play's target SDK requirement;

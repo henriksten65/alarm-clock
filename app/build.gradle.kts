@@ -60,6 +60,12 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        // The app's languages. Libraries' strings in other languages are left out, so the app
+        // never shows a mix; Android 13+ also lists these under the app's own language setting.
+        localeFilters += listOf("en", "sv", "de", "fr", "es", "pt")
+        generateLocaleConfig = true
+    }
     testOptions {
         // Robolectric tests read the app's real resources (strings, plurals, the manifest).
         unitTests.isIncludeAndroidResources = true

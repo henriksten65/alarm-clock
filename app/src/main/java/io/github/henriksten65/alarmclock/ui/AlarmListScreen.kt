@@ -631,6 +631,7 @@ private fun RingingCard(alarm: Alarm?, onSnooze: () -> Unit, onDismiss: () -> Un
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AlarmCard(
     alarm: Alarm,
@@ -660,22 +661,25 @@ private fun AlarmCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = contentAlpha),
                 )
                 if (alarm.enabled && alarm.isSnoozed(now)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // The button moves to its own line when the text is long (e.g. German, large text).
+                    FlowRow {
                         Text(
                             stringResource(R.string.snoozed_until, formatTime(context, alarm.snoozedUntil)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.align(Alignment.CenterVertically),
                         )
                         TextButton(onClick = onCancelSnooze) { Text(stringResource(R.string.cancel_snooze)) }
                     }
                 }
                 if (alarm.enabled && alarm.repeats) {
                     if (alarm.isSkipping(now)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        FlowRow {
                             Text(
                                 stringResource(R.string.skipping, dayAndTimeText(context, alarm.skippedAt, now)),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.align(Alignment.CenterVertically),
                             )
                             TextButton(onClick = onCancelSkip) { Text(stringResource(R.string.dont_skip)) }
                         }
