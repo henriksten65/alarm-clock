@@ -67,16 +67,17 @@ fun KeyboardTimeDialog(
     val confirm = { result?.let { (h, m) -> onConfirm(h, m) } }
 
     val focusRequester = remember { FocusRequester() }
-    val keyboard = LocalSoftwareKeyboardController.current
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
-        keyboard?.show()
-    }
-
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.enter_time)) },
         text = {
+            // In the dialog's own composition (its window), so the text field below is already
+            // attached when focus is requested; from outside the dialog that isn't guaranteed.
+            val keyboard = LocalSoftwareKeyboardController.current
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+                keyboard?.show()
+            }
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = field,
