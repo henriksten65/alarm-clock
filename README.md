@@ -101,6 +101,7 @@ app/src/main/java/io/github/henriksten65/alarmclock/
   MainActivity.kt     entry point, asks for notification permission
   TimeFormat.kt       time formatting helpers (respects 12/24-hour setting)
   ui/                 Compose screens and theme
+app/src/test/…        automated tests (see "Automated tests")
 ```
 
 ## Permissions
@@ -117,6 +118,28 @@ app/src/main/java/io/github/henriksten65/alarmclock/
 Note: Google Play only allows `USE_EXACT_ALARM` and `USE_FULL_SCREEN_INTENT` for apps whose
 core function is an alarm clock — which this is — but you'll need to declare that in the Play
 Console if you ever publish it.
+
+## Automated tests
+
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 147 tests on the
+JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
+
+| Test class | Covers |
+|---|---|
+| `AlarmScheduleTest` | next ring time: one-time/weekday alarms, month/year end, DST changes, Skip next, snooze |
+| `ui/ParseDigitsTest` | typed time entry ("630" → 6:30, 12/24-hour, invalid input) |
+| `AlarmRepositoryTest` | JSON format incl. version 1 data, ordering, ids never reused, Direct Boot storage + migration |
+| `AppSettingsTest` | defaults, persistence, unknown stored values |
+| `TimeFormatTest` | card/summary texts, week order per locale, countdowns |
+| `AlarmSchedulerTest` | AlarmManager scheduling, snooze, skip, rescheduling after reboot (missed alarms) / time change |
+| `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
+| `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm notification |
+| `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
+| `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
+| `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings) |
+
+The Android parts run on [Robolectric](https://robolectric.org/) (a simulated Android 15). Not covered:
+real sound output, the lock screen, real reboots and Direct Boot — check those on a device.
 
 ## Testing tips
 

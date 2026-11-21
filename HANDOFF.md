@@ -20,7 +20,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
 - GitHub Releases with the signed APK exist for `v2.3` and `v2.4` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  There are **no automated tests**.
+  Since 2.5 there are **147 automated tests** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Robolectric; see README "Automated tests" and §7).
 - Git history and tags:
 
   | Tag / commit | Contents |
@@ -199,13 +200,28 @@ Tools used:
 - The screen sleeps during long tests: `svc power stayon true` (set back to `false` afterwards).
 - After every test, delete the test alarms and leave the user's 09:54 alarm alone.
 
+### Automated tests (added for 2.5)
+
+- `app/src/test/`: plain JVM tests plus Robolectric 4.16 (`robolectric.properties`: sdk 35) and
+  Compose UI tests (`createComposeRule`). They run on JDK 25 (warnings about `System::load` are harmless).
+- `TestSupport.resetAppState()` clears the singletons (`AlarmRepository`/`AppSettings` instance,
+  `AlarmService._ringingAlarmId`) by reflection before each test; tests fix the zone to Europe/Berlin.
+- UI tests use `PHONE_SCREEN` (`w411dp-h891dp-mdpi`); Robolectric's default 320×470 dp screen hid buttons.
+  `AlarmListScreenTest` steps the Compose clock by hand (`settle()`), except the settings test.
+- **Pitfalls found:** (1) `weight(1f).aspectRatio(1f)` in `DaySelector` made Compose re-measure the
+  edit dialog forever under Robolectric (random 60 s hangs); now the buttons get an explicit size from
+  `BoxWithConstraints`. (2) `KeyboardTimeDialog` requested focus from outside the dialog's
+  composition ("FocusRequester is not initialized"); the `LaunchedEffect` is now inside the dialog.
+  (3) Robolectric's `AlarmManager` doesn't throw when exact alarms are disallowed, so `schedule()`'s
+  failure path is untested. (4) A crash or hang in one Compose test can make later ones in the same
+  JVM hang; when that happens, run classes one by one (`--tests …`) to find the culprit.
+
 ## 8. Open questions / unresolved issues
 
 - **Not yet done from the improvement list:**
   - *Extra features:* translations (all strings are English).
   - *Publishing:* the user only wants an APK to install directly for now (2026-11-21). Still open
-    for a later Play release: no automated tests (candidates: `parseDigits`, `nextTriggerMillis`
-    with weekdays/DST, `rescheduleAll` catch-up rules); outdated libraries (lint: AGP 9.5.1,
+    for a later Play release: outdated libraries (lint: AGP 9.5.1,
     Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 36…); Play's target SDK requirement;
     Console declarations (exact alarms, full-screen intent, systemExempted FGS), privacy policy,
     data-safety form, store graphics; an AAB (`bundleRelease`) instead of an APK.

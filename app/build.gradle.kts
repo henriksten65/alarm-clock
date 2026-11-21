@@ -60,6 +60,10 @@ android {
     buildFeatures {
         compose = true
     }
+    testOptions {
+        // Robolectric tests read the app's real resources (strings, plurals, the manifest).
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
 kotlin {
@@ -79,4 +83,13 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.material.icons.core)
     debugImplementation(libs.androidx.ui.tooling)
+    // Lets Compose UI tests start an empty activity to host the content under test.
+    debugImplementation(libs.androidx.ui.test.manifest)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.ui.test.junit4)
 }
