@@ -19,11 +19,12 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.3** (`versionCode 8`), tagged `v2.3`: "Skip next".
 - **Version 2.4** (`versionCode 9`), tagged `v2.4`: Settings → Appearance (same as phone / light / dark).
 - **Version 2.5** (`versionCode 10`), tagged `v2.5`: 147 automated tests; two small edit-dialog fixes they found.
-- GitHub Releases with the signed APK exist for `v2.3`, `v2.4` and `v2.5` (latest); see §3 for how they're made.
+- **Version 2.6** (`versionCode 11`), tagged `v2.6`: screen sizes, landscape, rotation, large text, screen readers (156 tests).
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.5` and `v2.6` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **156** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
-- After 2.5 (not yet a version): screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
+- 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
 
   | Tag / commit | Contents |
@@ -41,6 +42,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v2.6` | **Screens**: dialogs scroll and survive rotation, landscape top-bar "Add", tablet width cap, large-text wrapping, 48 dp day touch targets, screen-reader names on switch/delete |
   | `v2.5` | **Automated tests** (147, `./gradlew testDebugUnitTest`); day buttons sized explicitly; keyboard focus requested inside the time dialog |
 
 - **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
@@ -153,7 +155,7 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   "Long" of 10 s was too short), plus a ✕ button.
 - **Next-alarm countdown rounds up** (consistent with the "Alarm set for …" toast) and
   recomputes on every minute boundary **and** whenever the alarm list changes.
-- **Screens** (after 2.5): the edit and settings dialogs scroll; dialog state is `rememberSaveable`
+- **Screens** (2.6): the edit and settings dialogs scroll; dialog state is `rememberSaveable`
   (the edited alarm via `AlarmSaver`, JSON), so rotation keeps open dialogs and changes; content is
   capped at 640 dp (`MAX_CONTENT_WIDTH`); below 480 dp window height "Add alarm" moves to the top bar;
   sound buttons in Settings use `FlowRow`; day buttons: touch area = 1/7 of the row × ≥ 48 dp, circle
