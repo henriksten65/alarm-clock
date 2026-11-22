@@ -88,7 +88,7 @@ class TranslationsTest {
             for (field in R.string::class.java.fields) {
                 val name = field.name
                 val text = english[name] ?: continue // library strings
-                val args = placeholders(text).map { if (it.endsWith("d")) 3 else "x" }.toTypedArray()
+                val args: Array<Any> = placeholders(text).map<String, Any> { if (it.endsWith("d")) 3 else "x" }.toTypedArray()
                 r.getString(field.getInt(null), *args)
             }
             for (field in R.plurals::class.java.fields) {

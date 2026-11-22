@@ -47,22 +47,21 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.6` | **Screens**: dialogs scroll and survive rotation, landscape top-bar "Add", tablet width cap, large-text wrapping, 48 dp day touch targets, screen-reader names on switch/delete |
   | `v2.5` | **Automated tests** (147, `./gradlew testDebugUnitTest`); day buttons sized explicitly; keyboard focus requested inside the time dialog |
 
-- **Emulator apps:** three alarm apps are installed. `com.example.alarmclock` is the old
-  debug build (v2.1 code) with the user's alarm. `io.github.henriksten65.alarmclock` is the
-  release APK (2.4). `io.github.henriksten65.alarmclock.debug` is the current debug build (2.4
-  code). The two new ones have no alarms and default settings (Appearance = Same as phone), apart
-  from Keyboard time entry + 24-hour typing in both.
-  The emulator's own dark theme is **off** (`cmd uimode night no`).
-- **Emulator state:** the AVD `Medium_Phone_API_37.0` was running as `emulator-5554`. It
-  contains the user's own **09:54 one-time alarm (switched off)** in `com.example.alarmclock`; don't delete it. Settings on
-  the emulator: time entry = Keyboard, "Typed times use 24-hour clock" = on, alarm sound =
-  `test_tone.wav` (a test file pushed to `/sdcard/Music/`). The PIN used for Direct Boot
-  testing was removed again, the lock screen is back to swipe, and the alarm volume is 6/7.
+- **Emulator apps** (rebuilt 2026-11-22 after the emulator reset, see §8): `com.example.alarmclock`
+  is the old debug build (**v1.0** code now) with the user's alarm. `io.github.henriksten65.alarmclock`
+  is the release APK (2.7, the GitHub download). `io.github.henriksten65.alarmclock.debug` is the
+  current debug build. The two new ones have no alarms; Keyboard time entry + 24-hour typing in both.
+  The emulator's own dark theme is **off** (`cmd uimode night no`); system clock set to 24-hour.
+- **Emulator state:** the AVD `Medium_Phone_API_37.0` runs as `emulator-5554`. It contains the user's
+  **09:54 one-time alarm (switched off)** and a "Test 10:58" alarm in `com.example.alarmclock`; don't
+  delete them. Lock screen: swipe; alarm volume 6/7. `test_tone.wav` is no longer on the emulator.
+  **Start it with a cold boot (`emulator -avd Medium_Phone_API_37.0 -no-snapshot-load`)**: its only
+  snapshot is from 2026-11-18 and a quick boot resets the storage to that day.
 
 ## 3. Build & run (environment specifics)
 
 - **JDK:** the system Java and Android Studio's bundled JBR are both **JDK 25**, so Gradle
-  must be **≥ 9.1**. Build with:
+  must be **≥ 9.1** (now 9.8.2; AGP 8.x doesn't run on Gradle ≥ 9.6). Build with:
   `JAVA_HOME=/mnt/data2/dev/android-studio/jbr ./gradlew installDebug`
 - **GitHub Release** (when the user asks for "a release"): after the version commit + tag are
   pushed, `gh release create vX <apk> --repo henriksten65/alarm-clock --title "Alarm Clock X"
@@ -74,8 +73,15 @@ asks for features one at a time, tests them in the emulator, and then says
   `~/.android/keystores/alarmclock-release.jks` (alias `alarmclock`). The passwords are in the
   gitignored `keystore.properties` in the repo root. Without that file the release APK is
   unsigned. The user was told to back both up: every update must use the same key.
-- Versions: AGP 8.13.0 · Gradle 9.1.0 · Kotlin 2.2.20 · Compose BOM 2024.12.01 ·
-  compile/target SDK 35 · minSdk 26.
+- Versions (upgraded 2026-11-22): AGP 9.5.1 · Gradle 9.8.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 ·
+  core 1.19.1 · lifecycle 2.11.0 · activity 1.13.0 · Robolectric 4.17 · compileSdk **37** (required by
+  these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too) ·
+  targetSdk 35 · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
+  `kotlin-compose` plugin; its version sets the Kotlin version). Versions were picked ≥ ~2 weeks old;
+  lint still lists the newest (AGP 9.5.2, BOM 2026.11.01, lifecycle 2.11.1, Robolectric 4.18.1, Gradle 9.9.2).
+- **Since Compose 1.12:** Escape on a hardware keyboard closes a dialog (Back still hides the keyboard
+  first). `mkalarm.sh` now hides the keyboard with Back. Under Robolectric, opening the typed-time dialog
+  on top of the edit dialog hangs, so `AlarmListScreenTest.addAnAlarm` doesn't retype the time.
 - SDK: `~/Android/Sdk` (`local.properties`); adb: `~/Android/Sdk/platform-tools/adb`.
 - Android Studio lives in `/mnt/data2/dev/android-studio`. "No target device found" in Studio
   just means the emulator isn't running; start it from Device Manager.
@@ -248,10 +254,18 @@ Tools used:
 - **Not yet done from the improvement list:**
   - *Extra features:* (translations done in 2.7: sv, de, fr, es, pt).
   - *Publishing:* the user only wants an APK to install directly for now (2026-11-21). Still open
-    for a later Play release: outdated libraries (lint: AGP 9.5.1,
-    Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 36…); Play's target SDK requirement;
+    for a later Play release: Play's target SDK requirement (targetSdk is still 35; raising it changes
+    platform behaviour and needs its own testing);
     Console declarations (exact alarms, full-screen intent, systemExempted FGS), privacy policy,
     data-safety form, store graphics; an AAB (`bundleRelease`) instead of an APK.
+- **Emulator reset (2026-11-22):** the emulator process exited overnight (cause unknown). Starting it
+  again with a normal (quick) boot loaded the AVD's only snapshot, `default_boot` from 2026-11-18, which
+  reset its storage to that day: the 2.x installs, the old app's state and settings were lost. Rebuilt:
+  `com.example.alarmclock` (v1.0 there now) has a "Test 10:58" alarm and the user's **09:54 one-time
+  alarm (off, no label)** written back into its prefs; release 2.7 and the debug build reinstalled with
+  Keyboard + 24-hour typing; system 24-hour clock on; region not restorable from the shell (default);
+  `test_tone.wav` gone. **Start the emulator with `-no-snapshot-load` (cold boot)** so the current disk
+  state is kept, or let Android Studio save quick-boot state on a clean exit.
 - **Unexplained emulator restart** at about 10:33 on 2026-11-20 during testing. Dropbox only had
   `SYSTEM_RESTART`, with no app or system_server crash. Probably not the app; watch for a repeat.
 - **When the phone is unlocked and in use**, Android shows the alarm as a heads-up

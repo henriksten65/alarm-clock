@@ -66,12 +66,12 @@ Translations live in `app/src/main/res/values-<lang>/strings.xml` (`values/` is 
 ## Opening the project
 
 1. Android Studio → **File › Open…** → select this `alarm` folder.
-2. Let Gradle sync (Android Studio downloads Gradle 9.1 from `gradle/wrapper/gradle-wrapper.properties`).
+2. Let Gradle sync (Android Studio downloads Gradle 9.8 from `gradle/wrapper/gradle-wrapper.properties`).
 3. Run the `app` configuration on a device or emulator (Android 8.0 / API 26 or newer).
 
 From the command line: `./gradlew assembleDebug` (needs `ANDROID_HOME` or a `local.properties`
 with `sdk.dir=...`; Android Studio creates that file on first sync). Gradle needs a JDK it supports — JDK 25
-requires Gradle ≥ 9.1; Android Studio's bundled JDK works: `JAVA_HOME=<android-studio>/jbr ./gradlew assembleDebug`.
+requires Gradle ≥ 9.1 (the project uses 9.8.2); Android Studio's bundled JDK works: `JAVA_HOME=<android-studio>/jbr ./gradlew assembleDebug`.
 
 ## Release build (APK to install directly)
 
@@ -96,7 +96,8 @@ to the release app.
 
 ## Versions
 
-AGP 8.13.0 · Gradle 9.1.0 · Kotlin 2.2.20 · Compose BOM 2024.12.01 · compileSdk/targetSdk 35 · minSdk 26.
+AGP 9.5.1 · Gradle 9.8.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 · compileSdk 37 · targetSdk 35 · minSdk 26.
+AGP 9 compiles Kotlin itself, so there is no separate `org.jetbrains.kotlin.android` plugin.
 All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgrades.
 
 ## Project layout

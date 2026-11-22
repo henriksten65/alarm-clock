@@ -2,7 +2,6 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -13,7 +12,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "io.github.henriksten65.alarmclock"
-    compileSdk = 35
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "io.github.henriksten65.alarmclock"

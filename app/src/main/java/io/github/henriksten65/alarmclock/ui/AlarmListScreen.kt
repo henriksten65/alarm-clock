@@ -80,8 +80,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -119,7 +121,7 @@ private const val UNDO_TIMEOUT_MILLIS = 15_000L
 private val MAX_CONTENT_WIDTH = 640.dp
 
 /** Below this window height (e.g. a phone in landscape) "Add alarm" moves from the floating button into the top bar. */
-private const val SHORT_WINDOW_HEIGHT_DP = 480
+private val SHORT_WINDOW_HEIGHT = 480.dp
 
 /** Keeps the alarm being edited across rotation and other configuration changes. */
 internal val AlarmSaver = Saver<Alarm?, String>(
@@ -131,6 +133,7 @@ internal val AlarmSaver = Saver<Alarm?, String>(
 @Composable
 fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val alarms by repository.alarms.collectAsStateWithLifecycle()
     val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
     val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
@@ -198,7 +201,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
         val message = if (AlarmScheduler.schedule(context, enabled)) {
             timeUntilText(context, enabled.nextRingMillis())
         } else {
-            context.getString(R.string.schedule_failed)
+            resources.getString(R.string.schedule_failed)
         }
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
@@ -212,7 +215,8 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
         )
     }
 
-    val shortWindow = LocalConfiguration.current.screenHeightDp < SHORT_WINDOW_HEIGHT_DP
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -328,8 +332,8 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
                                     // cancelling showSnackbar on timeout removes it.
                                     val result = withTimeoutOrNull(UNDO_TIMEOUT_MILLIS) {
                                         snackbarHostState.showSnackbar(
-                                            message = context.getString(R.string.alarm_deleted),
-                                            actionLabel = context.getString(R.string.undo),
+                                            message = resources.getString(R.string.alarm_deleted),
+                                            actionLabel = resources.getString(R.string.undo),
                                             withDismissAction = true,
                                             duration = SnackbarDuration.Indefinite,
                                         )
@@ -792,12 +796,13 @@ private fun EditAlarmDialog(
 @Composable
 private fun AlarmSoundChooser(soundUri: String?, defaultSoundUri: String?, onChange: (String?) -> Unit) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     var menuOpen by remember { mutableStateOf(false) }
-    val title = remember(soundUri, defaultSoundUri) {
+    val title = remember(soundUri, defaultSoundUri, resources) {
         if (soundUri != null) {
             AlarmSound.title(context, soundUri)
         } else {
-            context.getString(R.string.sound_default, AlarmSound.title(context, defaultSoundUri))
+            resources.getString(R.string.sound_default, AlarmSound.title(context, defaultSoundUri))
         }
     }
     val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
