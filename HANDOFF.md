@@ -78,9 +78,18 @@ asks for features one at a time, tests them in the emulator, and then says
 - Versions (upgraded 2026-11-22): AGP 9.5.1 · Gradle 9.8.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 ·
   core 1.19.1 · lifecycle 2.11.0 · activity 1.13.0 · Robolectric 4.17 · compileSdk **37** (required by
   these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too) ·
-  targetSdk 35 · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
+  targetSdk **37** (since 2026-11-22, after 2.8) · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
   `kotlin-compose` plugin; its version sets the Kotlin version). Versions were picked ≥ ~2 weeks old;
   lint still lists the newest (AGP 9.5.2, BOM 2026.11.01, lifecycle 2.11.1, Robolectric 4.18.1, Gradle 9.9.2).
+- **targetSdk 37** (Android 16 + 17 behaviour changes), checked on the API 37 emulator: the alarm rings
+  with sound with the screen off (`dumpsys audio`: `state:started`, `mutedState:none`); Back on the ring
+  screen still only shows the hint (predictive back; we use `OnBackPressedCallback`); "Turn up" still
+  sets the volume. Android 17's background-audio hardening allows our case: a non-short foreground
+  service playing `USAGE_ALARM` with the exact-alarm permission. `dumpsys audio` → "Hardening
+  enforcement" logs "background playback would be muted … level: full … USAGE_ALARM" for every ring
+  (also at target 35 and for the old app): that's what the strict test mode
+  (`cmd audio set-hardening enable`) would do, not the normal behaviour. Watch this if a future Android
+  tightens it; a fix would be to start the service with while-in-use rights.
 - **Since Compose 1.12:** Escape on a hardware keyboard closes a dialog (Back still hides the keyboard
   first). `mkalarm.sh` now hides the keyboard with Back. Under Robolectric, opening the typed-time dialog
   on top of the edit dialog hangs, so `AlarmListScreenTest.addAnAlarm` doesn't retype the time.
@@ -256,8 +265,7 @@ Tools used:
 - **Not yet done from the improvement list:**
   - *Extra features:* (translations done in 2.7: sv, de, fr, es, pt).
   - *Publishing:* the user only wants an APK to install directly for now (2026-11-21). Still open
-    for a later Play release: Play's target SDK requirement (targetSdk is still 35; raising it changes
-    platform behaviour and needs its own testing);
+    for a later Play release (targetSdk is 37 now, above Play's requirement of 36):
     Console declarations (exact alarms, full-screen intent, systemExempted FGS), privacy policy,
     data-safety form, store graphics; an AAB (`bundleRelease`) instead of an APK.
 - **Emulator reset (2026-11-22):** the emulator process exited overnight (cause unknown). Starting it

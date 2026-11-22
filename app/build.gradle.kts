@@ -17,7 +17,7 @@ android {
     defaultConfig {
         applicationId = "io.github.henriksten65.alarmclock"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 37
         versionCode = 13
         versionName = "2.8"
     }
