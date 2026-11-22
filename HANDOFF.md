@@ -21,7 +21,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.5** (`versionCode 10`), tagged `v2.5`: 147 automated tests; two small edit-dialog fixes they found.
 - **Version 2.6** (`versionCode 11`), tagged `v2.6`: screen sizes, landscape, rotation, large text, screen readers (156 tests).
 - **Version 2.7** (`versionCode 12`), tagged `v2.7`: translations (sv, de, fr, es, pt); 162 tests.
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.6` and `v2.7` (latest); see §3 for how they're made.
+- **Version 2.8** (`versionCode 13`), tagged `v2.8`: library upgrade (AGP 9.5.1, Gradle 9.8.2, Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 37).
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.7` and `v2.8` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **162** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
@@ -43,13 +44,14 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v2.8` | **Library upgrade**: AGP 9.5.1, Gradle 9.8.2, Kotlin 2.4.21, Compose BOM 2026.09.00, AndroidX, compileSdk 37 |
   | `v2.7` | **Translations**: Swedish, German, French, Spanish, Portuguese; per-app language on Android 13+; long button texts on cards wrap |
   | `v2.6` | **Screens**: dialogs scroll and survive rotation, landscape top-bar "Add", tablet width cap, large-text wrapping, 48 dp day touch targets, screen-reader names on switch/delete |
   | `v2.5` | **Automated tests** (147, `./gradlew testDebugUnitTest`); day buttons sized explicitly; keyboard focus requested inside the time dialog |
 
 - **Emulator apps** (rebuilt 2026-11-22 after the emulator reset, see §8): `com.example.alarmclock`
   is the old debug build (**v1.0** code now) with the user's alarm. `io.github.henriksten65.alarmclock`
-  is the release APK (2.7, the GitHub download). `io.github.henriksten65.alarmclock.debug` is the
+  is the release APK (2.8). `io.github.henriksten65.alarmclock.debug` is the
   current debug build. The two new ones have no alarms; Keyboard time entry + 24-hour typing in both.
   The emulator's own dark theme is **off** (`cmd uimode night no`); system clock set to 24-hour.
 - **Emulator state:** the AVD `Medium_Phone_API_37.0` runs as `emulator-5554`. It contains the user's
