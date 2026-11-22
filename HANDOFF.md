@@ -308,8 +308,9 @@ when asked (§3).
 - `tools/emulator/ui.py`, `tools/emulator/mkalarm.sh`: emulator UI helpers
 - `app/src/main/res/raw/fallback_alarm.wav`: bundled fallback sound
 - Session transcript PDFs: `/mnt/data2/dev/Claude/AlarmClock-2.4-session.pdf`,
-  `AlarmClock-2.7-session.pdf` and `AlarmClock-2.8-session.pdf` (the 2.5–2.8 session: tests, screens,
-  translations, library upgrade; the 2.7 one is the same session up to 2.7), kept **outside
+  `AlarmClock-2.7-session.pdf`, `AlarmClock-2.8-session.pdf` and `AlarmClock-2.9-session.pdf` (the
+  2.5–2.9 session: tests, screens, translations, library upgrade, target SDK 37; the 2.7 and 2.8 ones
+  are the same session up to those versions), kept **outside
   the repo** on purpose (user's choice; don't commit transcripts). It was rendered from the
   session JSONL with reportlab in a throwaway venv, with the Gmail address redacted.
 - Claude memory: `~/.claude/projects/-mnt-data2-dev-Claude-alarm/memory/` (build environment, handoff pointer)
