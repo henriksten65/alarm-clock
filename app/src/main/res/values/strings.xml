@@ -89,4 +89,19 @@
     <string name="dont_skip">Don\'t skip</string>
     <string name="upcoming_channel_name">Upcoming alarms</string>
     <string name="upcoming_alarm">Upcoming alarm</string>
+    <string name="tab_alarms">Alarms</string>
+    <string name="timer">Timer</string>
+    <string name="timer_paused">Timer paused</string>
+    <string name="times_up">Time\'s up</string>
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
+    <string name="reset">Reset</string>
+    <string name="stop">Stop</string>
+    <string name="add_minute">+1 min</string>
+    <string name="paused">Paused</string>
+    <string name="delete_digit">Delete digit</string>
+    <string name="hours_unit">h</string>
+    <string name="minutes_unit">m</string>
+    <string name="seconds_unit">s</string>
 </resources>

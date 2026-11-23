@@ -59,6 +59,11 @@
             android:exported="false" />
 
         <receiver
+            android:name=".TimerReceiver"
+            android:directBootAware="true"
+            android:exported="false" />
+
+        <receiver
             android:name=".BootReceiver"
             android:directBootAware="true"
             android:exported="false">

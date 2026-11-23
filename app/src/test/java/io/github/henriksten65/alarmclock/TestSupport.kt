@@ -28,6 +28,7 @@ object TestSupport {
         clearStatic(AlarmRepository::class.java, "instance")
         clearStatic(AppSettings::class.java, "instance")
         setRingingAlarmId(null)
+        resetTimer()
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
     }
 
@@ -35,6 +36,12 @@ object TestSupport {
     fun restartProcess() {
         clearStatic(AlarmRepository::class.java, "instance")
         clearStatic(AppSettings::class.java, "instance")
+        resetTimer()
+    }
+
+    /** [Timer] reads its state from storage again on next use. */
+    private fun resetTimer() {
+        Timer::class.java.getDeclaredField("loaded").apply { isAccessible = true }.setBoolean(Timer, false)
     }
 
     /** Pretends an alarm is ringing (or nothing, for null), as [AlarmService] does while it runs. */
@@ -66,7 +73,14 @@ object TestSupport {
 
     /** The "upcoming alarm" reminders registered with AlarmManager. */
     val reminders: List<ShadowAlarmManager.ScheduledAlarm>
-        get() = shadowAlarmManager.scheduledAlarms.filter { it.alarmClockInfo == null }
+        get() = shadowAlarmManager.scheduledAlarms.filter { it.alarmClockInfo == null && !isTimer(it) }
+
+    /** The timer's AlarmManager alarm, if one is set. */
+    val timerAlarm: ShadowAlarmManager.ScheduledAlarm?
+        get() = shadowAlarmManager.scheduledAlarms.singleOrNull(::isTimer)
+
+    private fun isTimer(alarm: ShadowAlarmManager.ScheduledAlarm) =
+        shadowOf(alarm.operation).savedIntent.action == TimerReceiver.ACTION_DONE
 
     /** The alarm clocks currently registered with AlarmManager, by trigger time. */
     fun scheduledTimes(): List<Long> = alarmClocks.map { it.triggerAtMs }.sorted()

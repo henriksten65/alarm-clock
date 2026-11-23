@@ -16,6 +16,7 @@ class BootReceiver : BroadcastReceiver() {
         // fires those that are now in the past); otherwise they were lost, maybe while one was due.
         val catchUpMissed = intent.action != Intent.ACTION_TIME_CHANGED && intent.action != Intent.ACTION_TIMEZONE_CHANGED
         AlarmScheduler.rescheduleAll(context, catchUpMissed)
+        if (intent.action != AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED) Timer.restore(context)
     }
 
     private companion object {

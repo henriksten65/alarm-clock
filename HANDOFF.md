@@ -26,7 +26,7 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.10** (`versionCode 15`), tagged `v2.10`: "Upcoming alarm" notification 2 h before an alarm (175 tests).
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.9` and `v2.10` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are automated tests (now **175** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **197** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
 - 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
@@ -117,6 +117,10 @@ asks for features one at a time, tests them in the emulator, and then says
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
 | `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate`, `themeMode` (SYSTEM/LIGHT/DARK) |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
+| `Timer.kt` | The countdown timer (`Timer` object + `TimerState`, device-protected prefs `timer`): `setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` → `TimerReceiver` `TIMER_DONE` → `AlarmService` with id `Timer.RING_ID` (-100), so it rings like an alarm. Ongoing countdown notification (channel `timer`, chronometer count-down, `when` = `endWall`). `restore()` from `BootReceiver` (boot/update/time change): same boot → elapsed time; new boot (`Settings.Global.BOOT_COUNT`) → wall clock, rings if < auto-stop late |
+| `TimerReceiver.kt` | Timer done + notification actions (Pause/Resume/+1 min/Reset) |
+| `ui/MainScreen.kt` | Alarms / Timer tabs: `NavigationBar`, or `NavigationRail` below 480 dp height; Back on Timer → Alarms. `MainActivity` keeps the tab (saved state; `EXTRA_TAB` from the timer notification) |
+| `ui/TimerScreen.kt` | Keypad entry (`timerDigitsToMillis`, hhmmss from the right), countdown ring, Time's up; side-by-side above 560 dp width |
 | `UpcomingAlarm.kt` | "Upcoming alarm" notification 2 h before: a second AlarmManager alarm (`setExactAndAllowWhileIdle`, action `UPCOMING`) per alarm, kept in step by `AlarmScheduler.schedule`/`cancel`; posted right away if the alarm is < 2 h away; hidden when it rings; Dismiss → `AlarmScheduler.dismissUpcoming` |
 | `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll(catchUpMissed)`, `snooze`, `cancelSnooze`, `stopRinging`. Remembers each alarm's due time (`due_times` prefs) to find alarms missed while the phone was off |
 | `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |
@@ -198,6 +202,11 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   Android puts LOW ones under "Silent" and hides their status-bar icon, and the point is the icon.
   (A first build used a LOW channel `upcoming_alarms`; importance can't be raised later, hence the new
   id. It only ever existed in the emulator's debug build.)
+- **Timer rings through `AlarmService`/`RingActivity`** (id `Timer.RING_ID`) to reuse the sound
+  fallback chain, vibration, auto-stop, full-screen intent and "opening the app goes to the ring screen".
+  Not `setAlarmClock` (that would show the timer as the phone's "next alarm"); the timer notification
+  is a plain ongoing notification, not a foreground service (Android 14+ lets users swipe it away;
+  the timer keeps running).
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)

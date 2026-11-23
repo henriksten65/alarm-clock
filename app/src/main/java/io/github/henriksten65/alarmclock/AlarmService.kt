@@ -148,11 +148,15 @@ class AlarmService : Service() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val title = alarm?.label?.takeIf { it.isNotBlank() } ?: getString(R.string.alarm)
-        val text = alarm?.let { formatTime(this, it.hour, it.minute) }
+        val isTimer = alarmId == Timer.RING_ID
+        val title = when {
+            isTimer -> getString(R.string.times_up)
+            else -> alarm?.label?.takeIf { it.isNotBlank() } ?: getString(R.string.alarm)
+        }
+        val text = if (isTimer) getString(R.string.timer) else alarm?.let { formatTime(this, it.hour, it.minute) }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_alarm)
+            .setSmallIcon(if (isTimer) R.drawable.ic_timer else R.drawable.ic_alarm)
             .setContentTitle(title)
             .setContentText(text)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -161,8 +165,15 @@ class AlarmService : Service() {
             .setOngoing(true)
             .setContentIntent(fullScreenIntent)
             .setFullScreenIntent(fullScreenIntent, true)
-            .addAction(0, getString(R.string.snooze), actionIntent(AlarmReceiver.ACTION_SNOOZE, alarmId))
-            .addAction(0, getString(R.string.dismiss), actionIntent(AlarmReceiver.ACTION_DISMISS, alarmId))
+            .apply {
+                if (isTimer) {
+                    addAction(0, getString(R.string.add_minute), Timer.action(this@AlarmService, TimerReceiver.ACTION_ADD_MINUTE))
+                    addAction(0, getString(R.string.stop), actionIntent(AlarmReceiver.ACTION_DISMISS, alarmId))
+                } else {
+                    addAction(0, getString(R.string.snooze), actionIntent(AlarmReceiver.ACTION_SNOOZE, alarmId))
+                    addAction(0, getString(R.string.dismiss), actionIntent(AlarmReceiver.ACTION_DISMISS, alarmId))
+                }
+            }
             .build()
     }
 
@@ -224,6 +235,7 @@ class AlarmService : Service() {
                 .build()
             NotificationManagerCompat.from(context).createNotificationChannelsCompat(listOf(ringing, missed))
             UpcomingAlarm.createNotificationChannel(context)
+            Timer.createNotificationChannel(context)
         }
 
         private const val MISSED_CHANNEL_ID = "missed_alarms"

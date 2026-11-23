@@ -14,13 +14,19 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import io.github.henriksten65.alarmclock.ui.AlarmClockTheme
-import io.github.henriksten65.alarmclock.ui.AlarmListScreen
+import io.github.henriksten65.alarmclock.ui.MainScreen
+import io.github.henriksten65.alarmclock.ui.Tab
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { /* the list re-checks on resume */ }
+
+    private var tab by mutableStateOf(Tab.ALARMS)
 
     /** The ringing alarm we've already opened the ring screen for, so Back doesn't reopen it in a loop. */
     private var ringScreenShownFor: Int? = null
@@ -60,11 +66,32 @@ class MainActivity : ComponentActivity() {
         // Only on a fresh start: during a rotation an "Undo" for a deleted alarm may still be showing.
         if (savedInstanceState == null) AlarmSound.releaseUnused(this)
 
+        // The tab from before a rotation, or the one asked for (the timer notification opens Timer).
+        tab = savedInstanceState?.getString(KEY_TAB)?.let { Tab.valueOf(it) } ?: tabFrom(intent) ?: Tab.ALARMS
+
         val repository = AlarmRepository.getInstance(this)
         setContent {
             AlarmClockTheme {
-                AlarmListScreen(repository, AppSettings.getInstance(this))
+                MainScreen(repository, AppSettings.getInstance(this), tab, onTabChange = { tab = it })
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        tabFrom(intent)?.let { tab = it }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_TAB, tab.name)
+    }
+
+    private fun tabFrom(intent: Intent?): Tab? = if (intent?.getStringExtra(EXTRA_TAB) == TAB_TIMER) Tab.TIMER else null
+
+    companion object {
+        const val EXTRA_TAB = "io.github.henriksten65.alarmclock.EXTRA_TAB"
+        const val TAB_TIMER = "timer"
+        private const val KEY_TAB = "tab"
     }
 }

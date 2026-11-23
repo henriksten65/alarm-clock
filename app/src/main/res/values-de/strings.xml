@@ -90,4 +90,19 @@
     <string name="dont_skip">Nicht auslassen</string>
     <string name="upcoming_channel_name">Anstehende Wecker</string>
     <string name="upcoming_alarm">Anstehender Wecker</string>
+    <string name="tab_alarms">Wecker</string>
+    <string name="timer">Timer</string>
+    <string name="timer_paused">Timer pausiert</string>
+    <string name="times_up">Zeit abgelaufen</string>
+    <string name="start">Starten</string>
+    <string name="pause">Pausieren</string>
+    <string name="resume">Fortsetzen</string>
+    <string name="reset">Zurücksetzen</string>
+    <string name="stop">Stopp</string>
+    <string name="add_minute">+1 Min.</string>
+    <string name="paused">Pausiert</string>
+    <string name="delete_digit">Ziffer löschen</string>
+    <string name="hours_unit">h</string>
+    <string name="minutes_unit">m</string>
+    <string name="seconds_unit">s</string>
 </resources>

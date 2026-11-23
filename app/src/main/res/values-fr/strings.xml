@@ -92,4 +92,19 @@
     <string name="dont_skip">Ne pas ignorer</string>
     <string name="upcoming_channel_name">Alarmes à venir</string>
     <string name="upcoming_alarm">Alarme à venir</string>
+    <string name="tab_alarms">Alarmes</string>
+    <string name="timer">Minuteur</string>
+    <string name="timer_paused">Minuteur en pause</string>
+    <string name="times_up">Temps écoulé</string>
+    <string name="start">Démarrer</string>
+    <string name="pause">Pause</string>
+    <string name="resume">Reprendre</string>
+    <string name="reset">Réinitialiser</string>
+    <string name="stop">Arrêter</string>
+    <string name="add_minute">+1 min</string>
+    <string name="paused">En pause</string>
+    <string name="delete_digit">Effacer le chiffre</string>
+    <string name="hours_unit">h</string>
+    <string name="minutes_unit">m</string>
+    <string name="seconds_unit">s</string>
 </resources>

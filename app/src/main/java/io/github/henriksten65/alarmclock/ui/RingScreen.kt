@@ -1,5 +1,6 @@
 package io.github.henriksten65.alarmclock.ui
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +35,14 @@ import io.github.henriksten65.alarmclock.formatTime
 import kotlinx.coroutines.delay
 
 @Composable
-fun RingScreen(label: String, onSnooze: () -> Unit, onDismiss: () -> Unit) {
+fun RingScreen(
+    label: String,
+    onSnooze: () -> Unit,
+    onDismiss: () -> Unit,
+    @DrawableRes icon: Int = R.drawable.ic_alarm,
+    dismissText: String = stringResource(R.string.dismiss),
+    snoozeText: String? = null,
+) {
     val context = LocalContext.current
     val snoozeMinutes = remember { AppSettings.getInstance(context).snoozeMinutes.value }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -55,7 +63,7 @@ fun RingScreen(label: String, onSnooze: () -> Unit, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.Center,
         ) {
             Icon(
-                painterResource(R.drawable.ic_alarm),
+                painterResource(icon),
                 contentDescription = null,
                 modifier = Modifier.size(72.dp),
             )
@@ -68,11 +76,11 @@ fun RingScreen(label: String, onSnooze: () -> Unit, onDismiss: () -> Unit) {
             )
             Spacer(Modifier.height(64.dp))
             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().height(64.dp)) {
-                Text(stringResource(R.string.dismiss), style = MaterialTheme.typography.titleLarge)
+                Text(dismissText, style = MaterialTheme.typography.titleLarge)
             }
             Spacer(Modifier.height(16.dp))
             OutlinedButton(onClick = onSnooze, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                Text(stringResource(R.string.snooze_minutes, snoozeMinutes))
+                Text(snoozeText ?: stringResource(R.string.snooze_minutes, snoozeMinutes))
             }
         }
     }

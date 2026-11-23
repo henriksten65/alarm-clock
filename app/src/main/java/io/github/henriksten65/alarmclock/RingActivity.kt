@@ -67,17 +67,34 @@ class RingActivity : ComponentActivity() {
         val alarm = AlarmRepository.getInstance(this).get(alarmId)
         setContent {
             AlarmClockTheme {
-                RingScreen(
-                    label = alarm?.label.orEmpty(),
-                    onSnooze = {
-                        AlarmScheduler.snooze(this, alarmId)
-                        finish()
-                    },
-                    onDismiss = {
-                        AlarmScheduler.stopRinging(this)
-                        finish()
-                    },
-                )
+                if (alarmId == Timer.RING_ID) {
+                    RingScreen(
+                        label = getString(R.string.times_up),
+                        icon = R.drawable.ic_timer,
+                        dismissText = getString(R.string.stop),
+                        snoozeText = getString(R.string.add_minute),
+                        onSnooze = {
+                            Timer.addMinute(this)
+                            finish()
+                        },
+                        onDismiss = {
+                            AlarmScheduler.stopRinging(this)
+                            finish()
+                        },
+                    )
+                } else {
+                    RingScreen(
+                        label = alarm?.label.orEmpty(),
+                        onSnooze = {
+                            AlarmScheduler.snooze(this, alarmId)
+                            finish()
+                        },
+                        onDismiss = {
+                            AlarmScheduler.stopRinging(this)
+                            finish()
+                        },
+                    )
+                }
             }
         }
     }

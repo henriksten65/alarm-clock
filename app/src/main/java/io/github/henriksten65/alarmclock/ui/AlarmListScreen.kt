@@ -103,6 +103,7 @@ import io.github.henriksten65.alarmclock.AlarmSound
 import io.github.henriksten65.alarmclock.AppSettings
 import io.github.henriksten65.alarmclock.R
 import io.github.henriksten65.alarmclock.ThemeMode
+import io.github.henriksten65.alarmclock.Timer
 import io.github.henriksten65.alarmclock.TimeEntryMode
 import io.github.henriksten65.alarmclock.dayAndTimeText
 import io.github.henriksten65.alarmclock.formatTime
@@ -131,7 +132,7 @@ internal val AlarmSaver = Saver<Alarm?, String>(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
+fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val alarms by repository.alarms.collectAsStateWithLifecycle()
@@ -219,6 +220,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
     val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
 
     Scaffold(
+        modifier = modifier,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
@@ -247,7 +249,8 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings) {
       // Centred and at most MAX_CONTENT_WIDTH wide, so cards don't stretch across a tablet.
       Box(Modifier.padding(innerPadding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize()) {
-            ringingAlarmId?.let { id ->
+            // (A ringing timer is shown on the Timer tab.)
+            ringingAlarmId?.takeIf { it != Timer.RING_ID }?.let { id ->
                 RingingCard(
                     alarm = alarms.firstOrNull { it.id == id },
                     onSnooze = { AlarmScheduler.snooze(context, id) },

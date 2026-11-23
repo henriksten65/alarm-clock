@@ -90,4 +90,19 @@
     <string name="dont_skip">Hoppa inte över</string>
     <string name="upcoming_channel_name">Kommande alarm</string>
     <string name="upcoming_alarm">Kommande alarm</string>
+    <string name="tab_alarms">Alarm</string>
+    <string name="timer">Timer</string>
+    <string name="timer_paused">Timer pausad</string>
+    <string name="times_up">Tiden är ute</string>
+    <string name="start">Starta</string>
+    <string name="pause">Pausa</string>
+    <string name="resume">Fortsätt</string>
+    <string name="reset">Återställ</string>
+    <string name="stop">Stoppa</string>
+    <string name="add_minute">+1 min</string>
+    <string name="paused">Pausad</string>
+    <string name="delete_digit">Radera siffra</string>
+    <string name="hours_unit">h</string>
+    <string name="minutes_unit">m</string>
+    <string name="seconds_unit">s</string>
 </resources>
