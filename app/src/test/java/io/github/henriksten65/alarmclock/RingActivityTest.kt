@@ -53,6 +53,33 @@ class RingActivityTest {
     }
 
     @Test
+    fun aTimerSaysTimesUpWithItsLabel() {
+        Timer.add(context, 60_000L, "Eggs")
+        Timer.onDone(context, 1)
+        TestSupport.setRingingAlarmId(Timer.ringId(1))
+        launch(Timer.ringId(1))
+        compose.onNodeWithText("Time's up: Eggs").assertExists()
+    }
+
+    @Test
+    fun followsASecondTimerThatStartsRingingWhileItShows() {
+        Timer.add(context, 60_000L, "Tea")
+        Timer.add(context, 60_000L, "Eggs")
+        Timer.onDone(context, 1)
+        TestSupport.setRingingAlarmId(Timer.ringId(1))
+        launch(Timer.ringId(1))
+        compose.onNodeWithText("Time's up: Tea").assertExists()
+
+        // Eggs ends too: the service rings it now, and this screen's +1 min is for Eggs.
+        Timer.onDone(context, 2)
+        TestSupport.setRingingAlarmId(Timer.ringId(2))
+        compose.onNodeWithText("Time's up: Eggs").assertExists()
+        compose.onNodeWithText("+1 min").performClick()
+        assertEquals(TimerStatus.RUNNING, Timer.get(context, 2)!!.status)
+        assertEquals(TimerStatus.IDLE, Timer.get(context, 1)!!.status)
+    }
+
+    @Test
     fun withoutALabelItSaysAlarm() {
         repo.upsert(Alarm(id = 1, hour = 7, minute = 0))
         launch(1)

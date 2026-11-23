@@ -148,12 +148,16 @@ class AlarmService : Service() {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_USER_ACTION),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val isTimer = alarmId == Timer.RING_ID
+        val timerId = Timer.timerIdOf(alarmId)
+        val isTimer = timerId != null
         val title = when {
             isTimer -> getString(R.string.times_up)
             else -> alarm?.label?.takeIf { it.isNotBlank() } ?: getString(R.string.alarm)
         }
-        val text = if (isTimer) getString(R.string.timer) else alarm?.let { formatTime(this, it.hour, it.minute) }
+        val text = when (timerId) {
+            null -> alarm?.let { formatTime(this, it.hour, it.minute) }
+            else -> Timer.get(this, timerId)?.label?.takeIf { it.isNotBlank() } ?: getString(R.string.timer)
+        }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(if (isTimer) R.drawable.ic_timer else R.drawable.ic_alarm)
@@ -166,8 +170,8 @@ class AlarmService : Service() {
             .setContentIntent(fullScreenIntent)
             .setFullScreenIntent(fullScreenIntent, true)
             .apply {
-                if (isTimer) {
-                    addAction(0, getString(R.string.add_minute), Timer.action(this@AlarmService, TimerReceiver.ACTION_ADD_MINUTE))
+                if (timerId != null) {
+                    addAction(0, getString(R.string.add_minute), Timer.action(this@AlarmService, TimerReceiver.ACTION_ADD_MINUTE, timerId))
                     addAction(0, getString(R.string.stop), actionIntent(AlarmReceiver.ACTION_DISMISS, alarmId))
                 } else {
                     addAction(0, getString(R.string.snooze), actionIntent(AlarmReceiver.ACTION_SNOOZE, alarmId))

@@ -6,16 +6,21 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.github.henriksten65.alarmclock.PHONE_SCREEN
 import io.github.henriksten65.alarmclock.TestSupport
 import io.github.henriksten65.alarmclock.Timer
 import io.github.henriksten65.alarmclock.TimerStatus
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -90,29 +95,86 @@ class TimerScreenTest {
         compose.onNodeWithText("Start").assertIsNotEnabled()
     }
 
+    private fun timers() = Timer.timers(context).value
+
     @Test
-    fun startPauseResumeReset() {
+    fun startPauseResumeResetOnTheTimersCard() {
         showTimer()
+        compose.onNode(hasSetTextAction() and hasText("Label")).performTextInput("Eggs")
         tap("2"); tap("0")
         tap("Start")
-        assertEquals(TimerStatus.RUNNING, Timer.current(context).status)
-        assertEquals(20_000L, Timer.current(context).durationMillis)
+        val timer = timers().single()
+        assertEquals(TimerStatus.RUNNING, timer.status)
+        assertEquals("Eggs", timer.label)
+        assertEquals(20_000L, timer.durationMillis)
+        compose.onNodeWithText("Eggs").assertExists()
         compose.onNodeWithText("0:20").assertExists()
         tap("Pause")
         compose.onNodeWithText("Paused").assertExists()
         tap("Resume")
-        assertEquals(TimerStatus.RUNNING, Timer.current(context).status)
+        assertEquals(TimerStatus.RUNNING, timers().single().status)
         tap("+1 min")
-        assertEquals(80_000L, Timer.current(context).totalMillis)
+        assertEquals(80_000L, timers().single().totalMillis)
         tap("Reset")
-        assertEquals(TimerStatus.IDLE, Timer.current(context).status)
-        // Back at the keypad with the time that was set.
-        compose.onNodeWithText("00h  00m  20s").assertExists()
+        // The timer stays, with its set time, ready to start again.
+        assertEquals(TimerStatus.IDLE, timers().single().status)
+        compose.onNodeWithText("0:20").assertExists()
+        tap("Start")
+        assertEquals(TimerStatus.RUNNING, timers().single().status)
     }
 
     @Test
-    fun ringingTimerShowsStop() {
-        TestSupport.setRingingAlarmId(Timer.RING_ID)
+    fun addASecondTimer() {
+        Timer.add(context, 60_000L, "Tea")
+        showTimer()
+        compose.onNodeWithText("Tea").assertExists()
+        compose.onNodeWithContentDescription("Add timer").performClick()
+        settle()
+        compose.onNodeWithText("New timer").assertExists()
+        // The keypad shows the last time used.
+        compose.onNodeWithText("00h  01m  00s").assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Label")).performTextInput("Eggs")
+        tap("6"); tap("0"); tap("0")
+        tap("Start")
+        assertEquals(listOf("Tea", "Eggs"), timers().map { it.label })
+        assertEquals(360_000L, timers()[1].durationMillis)
+        compose.onNodeWithText("Tea").assertExists()
+        compose.onNodeWithText("Eggs").assertExists()
+    }
+
+    @Test
+    fun cancellingANewTimerGoesBackToTheList() {
+        Timer.add(context, 60_000L, "Tea")
+        showTimer()
+        compose.onNodeWithContentDescription("Add timer").performClick()
+        settle()
+        compose.onNodeWithContentDescription("Cancel").performClick()
+        settle()
+        compose.onNodeWithText("Tea").assertExists()
+        assertEquals(1, timers().size)
+    }
+
+    @Test
+    fun deleteATimer() {
+        Timer.add(context, 60_000L, "Tea")
+        Timer.add(context, 300_000L)
+        showTimer()
+        compose.onNodeWithContentDescription("Delete Tea timer").performClick()
+        settle()
+        assertEquals(listOf(2), timers().map { it.id })
+        // A timer without a label is named by its set time.
+        compose.onNodeWithContentDescription("Delete 5:00 timer").performClick()
+        settle()
+        assertTrue(timers().isEmpty())
+        // No timers left: straight to the keypad.
+        compose.onNodeWithText("Start").assertExists()
+    }
+
+    @Test
+    fun ringingTimerShowsTimesUpAndStop() {
+        Timer.add(context, 60_000L, "Eggs")
+        Timer.onDone(context, 1)
+        TestSupport.setRingingAlarmId(Timer.ringId(1))
         showTimer()
         compose.onNodeWithText("Time's up").assertExists()
         compose.onNodeWithText("Stop").assertExists()

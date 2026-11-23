@@ -107,4 +107,10 @@
     <string name="hours_unit">h</string>
     <string name="minutes_unit">m</string>
     <string name="seconds_unit">s</string>
+    <string name="new_timer">Nouveau minuteur</string>
+    <string name="add_timer">Ajouter un minuteur</string>
+    <string name="add_label">Ajouter un libellé</string>
+    <string name="timer_name">Minuteur %1$s</string>
+    <string name="times_up_named">Temps écoulé : %1$s</string>
+    <string name="named_timer_paused">%1$s en pause</string>
 </resources>

@@ -75,9 +75,13 @@ object TestSupport {
     val reminders: List<ShadowAlarmManager.ScheduledAlarm>
         get() = shadowAlarmManager.scheduledAlarms.filter { it.alarmClockInfo == null && !isTimer(it) }
 
-    /** The timer's AlarmManager alarm, if one is set. */
-    val timerAlarm: ShadowAlarmManager.ScheduledAlarm?
-        get() = shadowAlarmManager.scheduledAlarms.singleOrNull(::isTimer)
+    /** The timers' AlarmManager alarms. */
+    val timerAlarms: List<ShadowAlarmManager.ScheduledAlarm>
+        get() = shadowAlarmManager.scheduledAlarms.filter(::isTimer)
+
+    /** The AlarmManager alarm of the timer with [id], if one is set. */
+    fun timerAlarm(id: Int): ShadowAlarmManager.ScheduledAlarm? =
+        timerAlarms.singleOrNull { shadowOf(it.operation).savedIntent.getIntExtra(TimerReceiver.EXTRA_TIMER_ID, 0) == id }
 
     private fun isTimer(alarm: ShadowAlarmManager.ScheduledAlarm) =
         shadowOf(alarm.operation).savedIntent.action == TimerReceiver.ACTION_DONE

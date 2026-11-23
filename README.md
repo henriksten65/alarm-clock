@@ -48,13 +48,18 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 - While an alarm rings, the app shows a **Ringing** card with Dismiss/Snooze, and opening the app
   goes to the ring screen — so an alarm can always be stopped, even with notifications off.
   Switching a ringing alarm off, or deleting it, also stops it
-- **Timer** tab (bottom tabs; a side rail in landscape): type the time on a keypad (digits fill
-  in from the right: 1-3-0 is 1 min 30 s; the last time used is shown and typing replaces it), then
-  **Start**. A ring counts down with **Pause/Resume**, **+1 min** and **Reset**. While it runs, the
-  status bar shows a timer icon and a live countdown notification with the same buttons
-  ("Timer paused · 4:32" while paused). When it ends it rings like an alarm (sound, vibration, ring
-  screen over the lock screen) with **Stop** and **+1 min**. It keeps running through app updates,
-  clock changes and reboots (a timer that ended while the phone was off rings if it's only a little late)
+- **Timer** tab (bottom tabs; a side rail in landscape) with **several timers**, each with an
+  optional **label** ("Eggs"). Type the time on a keypad (digits fill in from the right: 1-3-0 is
+  1 min 30 s; the last time used is shown and typing replaces it), add a label if you like, then
+  **Start**. Each timer is a card with a progress ring, **Pause/Resume**, **+1 min** and **Reset**;
+  **+** adds another timer, tapping the label changes it, and **×** deletes the timer. A finished or
+  reset timer stays in the list with its time and a **Start** button. While a timer runs, the status
+  bar shows a timer icon and a live countdown notification per timer ("Eggs", or "Eggs paused ·
+  4:32") with the same buttons. When one ends it rings like an alarm (sound, vibration, ring screen
+  over the lock screen: "Time's up: Eggs") with **Stop** and **+1 min**; if another timer or alarm
+  ends while one rings, the newer one takes over the sound and the ring screen. Timers keep running
+  through app updates, clock changes and reboots (a timer that ended while the phone was off rings
+  if it's only a little late)
 - Warning banners (with a button to fix it) when something would stop alarms from being seen or
   heard: exact alarms not allowed, notifications off, full-screen alerts off (Android 14+),
   alarm volume at its lowest, Do Not Disturb silencing alarms
@@ -123,7 +128,7 @@ app/src/main/java/io/github/henriksten65/alarmclock/
   AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
   Storage.kt          device-protected SharedPreferences (Direct Boot) + migration
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing
-  Timer.kt            the timer: state, its AlarmManager alarm, countdown notification
+  Timer.kt            the timers: list + state, their AlarmManager alarms, countdown notifications
   TimerReceiver.kt    timer done + notification buttons (Pause/Resume/+1 min/Reset)
   UpcomingAlarm.kt    "Upcoming alarm" notification two hours before (own AlarmManager reminder)
   AlarmReceiver.kt    fires when an alarm goes off; handles Snooze/Dismiss actions
@@ -153,7 +158,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 197 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 211 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -164,8 +169,8 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AppSettingsTest` | defaults, persistence, unknown stored values |
 | `TimeFormatTest` | card/summary texts, week order per locale, countdowns |
 | `AlarmSchedulerTest` | AlarmManager scheduling, snooze, skip, rescheduling after reboot (missed alarms) / time change |
-| `TimerTest` | timer start/pause/resume/+1 min/reset, its alarm and notification, ringing, after a reboot |
-| `ui/TimerScreenTest` | Alarms/Timer tabs, the keypad, Start/Pause/Resume/Reset, Time's up |
+| `TimerTest` | timers: add/start/pause/resume/+1 min/reset/delete, labels, independence, their alarms and notifications, ringing, reboots, moving 3.0's timer over |
+| `ui/TimerScreenTest`, `ui/LabelDialogTest` | Alarms/Timer tabs, the keypad with a label, timer cards (Start/Pause/Resume/Reset/delete), adding a second timer, Time's up, the label dialog |
 | `UpcomingAlarmTest` | "Upcoming alarm" notification: reminder two hours before, shown/hidden as alarms change or ring, Dismiss |
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
 | `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm notification |

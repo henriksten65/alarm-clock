@@ -12,6 +12,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.collectAsState
 import androidx.core.content.ContextCompat
 import io.github.henriksten65.alarmclock.ui.AlarmClockTheme
 import io.github.henriksten65.alarmclock.ui.RingScreen
@@ -63,18 +64,22 @@ class RingActivity : ComponentActivity() {
     }
 
     private fun render(intent: Intent) {
-        val alarmId = intent.getIntExtra(EXTRA_ALARM_ID, -1)
-        val alarm = AlarmRepository.getInstance(this).get(alarmId)
+        val openedFor = intent.getIntExtra(EXTRA_ALARM_ID, -1)
         setContent {
+            // What rings now: when a second timer or alarm starts while this screen shows, the
+            // service switches to it (the full-screen intent doesn't reopen this screen), so follow it.
+            val alarmId = AlarmService.ringingAlarmId.collectAsState().value ?: openedFor
             AlarmClockTheme {
-                if (alarmId == Timer.RING_ID) {
+                val timerId = Timer.timerIdOf(alarmId)
+                if (timerId != null) {
+                    val timerLabel = Timer.get(this, timerId)?.label.orEmpty()
                     RingScreen(
-                        label = getString(R.string.times_up),
+                        label = if (timerLabel.isBlank()) getString(R.string.times_up) else getString(R.string.times_up_named, timerLabel),
                         icon = R.drawable.ic_timer,
                         dismissText = getString(R.string.stop),
                         snoozeText = getString(R.string.add_minute),
                         onSnooze = {
-                            Timer.addMinute(this)
+                            Timer.addMinute(this, timerId)
                             finish()
                         },
                         onDismiss = {
@@ -83,6 +88,7 @@ class RingActivity : ComponentActivity() {
                         },
                     )
                 } else {
+                    val alarm = AlarmRepository.getInstance(this).get(alarmId)
                     RingScreen(
                         label = alarm?.label.orEmpty(),
                         onSnooze = {

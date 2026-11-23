@@ -26,9 +26,10 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.10** (`versionCode 15`), tagged `v2.10`: "Upcoming alarm" notification 2 h before an alarm (175 tests).
 - **Version 3.0** (`versionCode 16`), tagged `v3.0`: Timer tab with a status-bar countdown (197 tests).
 - **Version 3.1** (`versionCode 17`), tagged `v3.1`: a new alarm in Keyboard mode opens straight on the typed-time dialog (keypad up).
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.10`, `v3.0` and `v3.1` (latest); see §3 for how they're made.
+- **Version 3.2** (`versionCode 18`), tagged `v3.2`: several timers with labels (211 tests).
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.2` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are automated tests (now **197** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **211** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
 - 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
@@ -48,6 +49,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v3.2` | **Several timers with labels** (cards, + to add, tap label to rename, × to delete; one notification each); ring screen follows whatever rings now |
   | `v3.1` | New alarm with Keyboard time entry opens on the typed-time dialog with the keypad up (`mkalarm.sh` no longer taps the time) |
   | `v3.0` | **Timer** tab (keypad entry, Pause/Resume/+1 min/Reset, countdown notification in the status bar, rings like an alarm) |
   | `v2.10` | **Upcoming alarm** notification from 2 h before (status-bar icon, Dismiss skips that ring) |
@@ -100,7 +102,8 @@ asks for features one at a time, tests them in the emulator, and then says
   tightens it; a fix would be to start the service with while-in-use rights.
 - **Since Compose 1.12:** Escape on a hardware keyboard closes a dialog (Back still hides the keyboard
   first). `mkalarm.sh` now hides the keyboard with Back. Under Robolectric, opening the typed-time dialog
-  on top of the edit dialog hangs, so `AlarmListScreenTest.addAnAlarm` doesn't retype the time.
+  on top of the edit dialog hangs, so `AlarmListScreenTest.addAnAlarm` doesn't retype the time. Likewise the timer
+  `LabelDialog` hangs over the Timer screen (and under `PHONE_SCREEN`), so `LabelDialogTest` drives it alone.
 - SDK: `~/Android/Sdk` (`local.properties`); adb: `~/Android/Sdk/platform-tools/adb`.
 - Android Studio lives in `/mnt/data2/dev/android-studio`. "No target device found" in Studio
   just means the emulator isn't running; start it from Device Manager.
@@ -121,10 +124,10 @@ asks for features one at a time, tests them in the emulator, and then says
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
 | `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate`, `themeMode` (SYSTEM/LIGHT/DARK) |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
-| `Timer.kt` | The countdown timer (`Timer` object + `TimerState`, device-protected prefs `timer`): `setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` → `TimerReceiver` `TIMER_DONE` → `AlarmService` with id `Timer.RING_ID` (-100), so it rings like an alarm. Ongoing countdown notification (channel `timer`, chronometer count-down, `when` = `endWall`). `restore()` from `BootReceiver` (boot/update/time change): same boot → elapsed time; new boot (`Settings.Global.BOOT_COUNT`) → wall clock, rings if < auto-stop late |
-| `TimerReceiver.kt` | Timer done + notification actions (Pause/Resume/+1 min/Reset) |
+| `Timer.kt` | The timers (`Timer` object + `TimerState` list as JSON in device-protected prefs `timer`, key `timers`; `last_id` (ids never reused), `duration` = last keypad time). Each: `setExactAndAllowWhileIdle(ELAPSED_REALTIME_WAKEUP)` → `TimerReceiver` `TIMER_DONE` (extra `EXTRA_TIMER_ID`, data `timer://id` keeps PendingIntents apart) → `AlarmService` with id `Timer.ringId(id)` = −1000 − id (`timerIdOf` maps back), so it rings like an alarm. Ongoing countdown notification per timer (id 3000 + timer id, channel `timer`). Finished/reset timers stay IDLE in the list. `restore()` from `BootReceiver` (boot/update/time change): same boot → elapsed time; new boot (`Settings.Global.BOOT_COUNT`) → wall clock, rings if < auto-stop late. 3.0's single timer (flat prefs keys) is moved to timer 1 on first load |
+| `TimerReceiver.kt` | Timer done + notification actions (Pause/Resume/+1 min/Reset), per timer id |
 | `ui/MainScreen.kt` | Alarms / Timer tabs: `NavigationBar`, or `NavigationRail` below 480 dp height; Back on Timer → Alarms. `MainActivity` keeps the tab (saved state; `EXTRA_TAB` from the timer notification) |
-| `ui/TimerScreen.kt` | Keypad entry (`timerDigitsToMillis`, hhmmss from the right), countdown ring, Time's up; side-by-side above 560 dp width |
+| `ui/TimerScreen.kt` | Keypad entry with label (`timerDigitsToMillis`, hhmmss from the right; shown alone when there are no timers, else after +), timer cards (one shared 100 ms tick), `LabelDialog`; keypad side-by-side above 560 dp width |
 | `UpcomingAlarm.kt` | "Upcoming alarm" notification 2 h before: a second AlarmManager alarm (`setExactAndAllowWhileIdle`, action `UPCOMING`) per alarm, kept in step by `AlarmScheduler.schedule`/`cancel`; posted right away if the alarm is < 2 h away; hidden when it rings; Dismiss → `AlarmScheduler.dismissUpcoming` |
 | `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll(catchUpMissed)`, `snooze`, `cancelSnooze`, `stopRinging`. Remembers each alarm's due time (`due_times` prefs) to find alarms missed while the phone was off |
 | `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |

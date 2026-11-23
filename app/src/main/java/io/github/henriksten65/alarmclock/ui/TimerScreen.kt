@@ -1,6 +1,30 @@
 package io.github.henriksten65.alarmclock.ui
 
 import android.os.SystemClock
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,12 +104,49 @@ internal fun millisToTimerDigits(millis: Long): String {
 @Composable
 fun TimerScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val state by Timer.state(context).collectAsStateWithLifecycle()
-    val ringingId by AlarmService.ringingAlarmId.collectAsStateWithLifecycle()
+    val timers by Timer.timers(context).collectAsStateWithLifecycle()
+    val lastDuration by Timer.lastDuration(context).collectAsStateWithLifecycle()
+    val ringingTimerId = Timer.timerIdOf(AlarmService.ringingAlarmId.collectAsStateWithLifecycle().value)
+
+    // The keypad for a new timer: on its own when there are no timers, otherwise after "Add timer".
+    var adding by rememberSaveable { mutableStateOf(false) }
+    val showEntry = adding || timers.isEmpty()
+    val canCancel = showEntry && timers.isNotEmpty()
+    BackHandler(enabled = canCancel) { adding = false }
+
+    var renaming by rememberSaveable { mutableStateOf<Int?>(null) }
+
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
 
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.timer)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(if (canCancel) R.string.new_timer else R.string.timer)) },
+                navigationIcon = {
+                    if (canCancel) {
+                        IconButton(onClick = { adding = false }) {
+                            Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel))
+                        }
+                    }
+                },
+                actions = {
+                    if (!showEntry && shortWindow) {
+                        IconButton(onClick = { adding = true }) {
+                            Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_timer))
+                        }
+                    }
+                },
+            )
+        },
+        floatingActionButton = {
+            if (!showEntry && !shortWindow) {
+                FloatingActionButton(onClick = { adding = true }) {
+                    Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_timer))
+                }
+            }
+        },
     ) { innerPadding ->
         Box(
             Modifier
@@ -94,32 +155,215 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter,
         ) {
-            when {
-                ringingId == Timer.RING_ID -> TimesUp(
-                    onStop = { AlarmScheduler.stopRinging(context) },
-                    onAddMinute = { Timer.addMinute(context) },
+            if (showEntry) {
+                TimerEntry(
+                    initialMillis = lastDuration,
+                    onStart = { millis, label ->
+                        Timer.add(context, millis, label)
+                        adding = false
+                    },
                 )
-                state.status == TimerStatus.IDLE -> TimerEntry(
-                    initialMillis = state.durationMillis,
-                    onStart = { Timer.start(context, it) },
+            } else {
+                TimerList(
+                    timers = timers,
+                    ringingTimerId = ringingTimerId,
+                    onRename = { renaming = it },
                 )
-                else -> Countdown(
-                    state = state,
-                    onPause = { Timer.pause(context) },
-                    onResume = { Timer.resume(context) },
-                    onReset = { Timer.reset(context) },
-                    onAddMinute = { Timer.addMinute(context) },
+            }
+        }
+    }
+
+    renaming?.let { id ->
+        val timer = timers.firstOrNull { it.id == id }
+        if (timer == null) {
+            renaming = null
+        } else {
+            LabelDialog(
+                initial = timer.label,
+                onDismiss = { renaming = null },
+                onConfirm = {
+                    Timer.setLabel(context, id, it)
+                    renaming = null
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimerList(timers: List<TimerState>, ringingTimerId: Int?, onRename: (Int) -> Unit) {
+    val context = LocalContext.current
+    // One clock for all cards, ticking while any timer runs.
+    var nowElapsed by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    val anyRunning = timers.any { it.status == TimerStatus.RUNNING }
+    LaunchedEffect(anyRunning) {
+        nowElapsed = SystemClock.elapsedRealtime()
+        while (anyRunning) {
+            delay(100)
+            nowElapsed = SystemClock.elapsedRealtime()
+        }
+    }
+    Column(
+        Modifier
+            .widthIn(max = MAX_CONTENT_WIDTH)
+            .fillMaxWidth()
+            // Room at the bottom so the floating button doesn't cover the last card's buttons.
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 88.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        timers.forEach { timer ->
+            TimerCard(
+                timer = timer,
+                nowElapsed = nowElapsed,
+                ringing = timer.id == ringingTimerId,
+                onRename = { onRename(timer.id) },
+                onStart = { Timer.start(context, timer.id) },
+                onPause = { Timer.pause(context, timer.id) },
+                onResume = { Timer.resume(context, timer.id) },
+                onReset = { Timer.reset(context, timer.id) },
+                onAddMinute = { Timer.addMinute(context, timer.id) },
+                onStop = { AlarmScheduler.stopRinging(context) },
+                onDelete = { Timer.delete(context, timer.id) },
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TimerCard(
+    timer: TimerState,
+    nowElapsed: Long,
+    ringing: Boolean,
+    onRename: () -> Unit,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onResume: () -> Unit,
+    onReset: () -> Unit,
+    onAddMinute: () -> Unit,
+    onStop: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val remaining = timer.remaining(nowElapsed)
+    // Screen readers name the timer by its label, or by its set time: "Eggs timer", "5:00 timer".
+    val timerName = stringResource(R.string.timer_name, timer.label.ifBlank { formatDuration(timer.durationMillis) })
+    Card(
+        colors = if (ringing) {
+            CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+        } else {
+            CardDefaults.cardColors()
+        },
+    ) {
+        Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    timer.label.ifBlank { stringResource(R.string.add_label) },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (timer.label.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else Color.Unspecified,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(MaterialTheme.shapes.small)
+                        .clickable(onClickLabel = stringResource(R.string.label), onClick = onRename)
+                        .padding(vertical = 12.dp),
                 )
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_named_alarm, timerName))
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(56.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        progress = {
+                            when {
+                                timer.status == TimerStatus.IDLE -> if (ringing) 0f else 1f
+                                timer.totalMillis > 0 -> remaining.toFloat() / timer.totalMillis
+                                else -> 0f
+                            }
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                        strokeWidth = 6.dp,
+                        trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                        gapSize = 0.dp,
+                    )
+                }
+                Spacer(Modifier.width(16.dp))
+                Column {
+                    Text(
+                        if (ringing) stringResource(R.string.times_up) else formatDuration(remaining),
+                        style = MaterialTheme.typography.displaySmall,
+                        maxLines = 1,
+                    )
+                    if (timer.status == TimerStatus.PAUSED) {
+                        Text(stringResource(R.string.paused), style = MaterialTheme.typography.titleSmall)
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+            FlowRow(
+                Modifier.fillMaxWidth().padding(end = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val buttonModifier = Modifier.heightIn(min = 48.dp)
+                when {
+                    ringing -> {
+                        OutlinedButton(onClick = onAddMinute, modifier = buttonModifier) { Text(stringResource(R.string.add_minute)) }
+                        Button(onClick = onStop, modifier = buttonModifier.widthIn(min = 112.dp)) { Text(stringResource(R.string.stop)) }
+                    }
+                    timer.status == TimerStatus.IDLE -> {
+                        Button(onClick = onStart, modifier = buttonModifier.widthIn(min = 112.dp)) { Text(stringResource(R.string.start)) }
+                    }
+                    else -> {
+                        val running = timer.status == TimerStatus.RUNNING
+                        OutlinedButton(onClick = onReset, modifier = buttonModifier) { Text(stringResource(R.string.reset)) }
+                        OutlinedButton(onClick = onAddMinute, modifier = buttonModifier) { Text(stringResource(R.string.add_minute)) }
+                        Button(onClick = if (running) onPause else onResume, modifier = buttonModifier.widthIn(min = 112.dp)) {
+                            Text(stringResource(if (running) R.string.pause else R.string.resume))
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun TimerEntry(initialMillis: Long, onStart: (Long) -> Unit) {
+internal fun LabelDialog(initial: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    // Cursor at the end, and the keyboard up right away (like the typed-time dialog).
+    var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(initial, TextRange(initial.length)))
+    }
+    val focusRequester = remember { FocusRequester() }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.label)) },
+        text = {
+            // In the dialog's own composition, so the field is attached when focus is requested.
+            val keyboard = LocalSoftwareKeyboardController.current
+            LaunchedEffect(Unit) {
+                focusRequester.requestFocus()
+                keyboard?.show()
+            }
+            OutlinedTextField(
+                value = field,
+                onValueChange = { field = it },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { onConfirm(field.text) }),
+                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
+            )
+        },
+        confirmButton = { TextButton(onClick = { onConfirm(field.text) }) { Text(stringResource(R.string.ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
+}
+
+@Composable
+private fun TimerEntry(initialMillis: Long, onStart: (millis: Long, label: String) -> Unit) {
     // Shows the last time used; typing replaces it (like the typed alarm time).
     var digits by rememberSaveable { mutableStateOf(millisToTimerDigits(initialMillis)) }
     var replaceOnType by rememberSaveable { mutableStateOf(true) }
+    var label by rememberSaveable { mutableStateOf("") }
     val millis = timerDigitsToMillis(digits)
 
     fun type(key: String) {
@@ -136,12 +380,22 @@ private fun TimerEntry(initialMillis: Long, onStart: (Long) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxWidth().padding(16.dp)) {
         val wide = maxWidth > 560.dp
         val keySize = if (wide) 56.dp else 72.dp
+        val labelField = @Composable {
+            OutlinedTextField(
+                value = label,
+                onValueChange = { label = it },
+                label = { Text(stringResource(R.string.label)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences, imeAction = ImeAction.Done),
+                modifier = Modifier.widthIn(max = 360.dp).fillMaxWidth(),
+            )
+        }
         val display = @Composable {
             TimerEntryDisplay(digits, dimmed = replaceOnType)
         }
         val start = @Composable {
             Button(
-                onClick = { onStart(millis) },
+                onClick = { onStart(millis, label) },
                 enabled = millis > 0,
                 modifier = Modifier.widthIn(min = 200.dp).height(56.dp),
             ) { Text(stringResource(R.string.start), style = MaterialTheme.typography.titleMedium) }
@@ -154,6 +408,8 @@ private fun TimerEntry(initialMillis: Long, onStart: (Long) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    labelField()
+                    Spacer(Modifier.height(16.dp))
                     display()
                     Spacer(Modifier.height(24.dp))
                     start()
@@ -162,6 +418,8 @@ private fun TimerEntry(initialMillis: Long, onStart: (Long) -> Unit) {
             }
         } else {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                labelField()
+                Spacer(Modifier.height(16.dp))
                 display()
                 Spacer(Modifier.height(16.dp))
                 keypad()
@@ -211,96 +469,5 @@ private fun Keypad(keySize: Dp, onDigit: (String) -> Unit, onBackspace: () -> Un
                 }
             }
         }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun Countdown(
-    state: TimerState,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
-    onReset: () -> Unit,
-    onAddMinute: () -> Unit,
-) {
-    var nowElapsed by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(state) {
-        while (state.status == TimerStatus.RUNNING) {
-            nowElapsed = SystemClock.elapsedRealtime()
-            delay(100)
-        }
-    }
-    val remaining = state.remaining(nowElapsed)
-    val running = state.status == TimerStatus.RUNNING
-
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(16.dp)) {
-        // Side by side when wide (a phone in landscape), so the buttons stay on screen.
-        val wide = maxWidth > 560.dp
-        val ringSize = if (wide) 240.dp else minOf(maxWidth, 280.dp)
-        val ring = @Composable {
-            Box(Modifier.size(ringSize), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(
-                    progress = { if (state.totalMillis > 0) remaining.toFloat() / state.totalMillis else 0f },
-                    modifier = Modifier.fillMaxSize(),
-                    strokeWidth = 8.dp,
-                    trackColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    gapSize = 0.dp,
-                )
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(formatDuration(remaining), style = MaterialTheme.typography.displayMedium, maxLines = 1)
-                    if (!running) {
-                        Text(stringResource(R.string.paused), style = MaterialTheme.typography.titleMedium)
-                    }
-                }
-            }
-        }
-        val buttons = @Composable {
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                OutlinedButton(onClick = onReset, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.reset)) }
-                Button(onClick = if (running) onPause else onResume, modifier = Modifier.heightIn(min = 48.dp).widthIn(min = 120.dp)) {
-                    Text(stringResource(if (running) R.string.pause else R.string.resume))
-                }
-                OutlinedButton(onClick = onAddMinute, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.add_minute)) }
-            }
-        }
-        if (wide) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                ring()
-                Box(Modifier.widthIn(max = 360.dp)) { buttons() }
-            }
-        } else {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                ring()
-                Spacer(Modifier.height(24.dp))
-                buttons()
-            }
-        }
-    }
-}
-
-@Composable
-private fun TimesUp(onStop: () -> Unit, onAddMinute: () -> Unit) {
-    Column(
-        Modifier.fillMaxWidth().padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(32.dp))
-        Text(stringResource(R.string.times_up), style = MaterialTheme.typography.displaySmall)
-        Spacer(Modifier.height(32.dp))
-        Button(onClick = onStop, modifier = Modifier.widthIn(min = 200.dp).height(56.dp)) {
-            Text(stringResource(R.string.stop), style = MaterialTheme.typography.titleMedium)
-        }
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = onAddMinute, modifier = Modifier.widthIn(min = 200.dp).heightIn(min = 48.dp)) {
-            Text(stringResource(R.string.add_minute))
-        }
-        Spacer(Modifier.width(0.dp))
     }
 }

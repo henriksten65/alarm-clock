@@ -119,10 +119,10 @@ import org.json.JSONObject
 private const val UNDO_TIMEOUT_MILLIS = 15_000L
 
 /** The alarm list and the warning banners don't get wider than this (tablets, landscape). */
-private val MAX_CONTENT_WIDTH = 640.dp
+internal val MAX_CONTENT_WIDTH = 640.dp
 
 /** Below this window height (e.g. a phone in landscape) "Add alarm" moves from the floating button into the top bar. */
-private val SHORT_WINDOW_HEIGHT = 480.dp
+internal val SHORT_WINDOW_HEIGHT = 480.dp
 
 /** Keeps the alarm being edited across rotation and other configuration changes. */
 internal val AlarmSaver = Saver<Alarm?, String>(
@@ -250,7 +250,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
       Box(Modifier.padding(innerPadding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         Column(Modifier.widthIn(max = MAX_CONTENT_WIDTH).fillMaxSize()) {
             // (A ringing timer is shown on the Timer tab.)
-            ringingAlarmId?.takeIf { it != Timer.RING_ID }?.let { id ->
+            ringingAlarmId?.takeIf { Timer.timerIdOf(it) == null }?.let { id ->
                 RingingCard(
                     alarm = alarms.firstOrNull { it.id == id },
                     onSnooze = { AlarmScheduler.snooze(context, id) },
