@@ -88,4 +88,6 @@
     <string name="skip_next">Nächsten auslassen</string>
     <string name="skipping">%1$s wird ausgelassen</string>
     <string name="dont_skip">Nicht auslassen</string>
+    <string name="upcoming_channel_name">Anstehende Wecker</string>
+    <string name="upcoming_alarm">Anstehender Wecker</string>
 </resources>

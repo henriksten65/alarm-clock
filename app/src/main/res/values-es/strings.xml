@@ -90,4 +90,6 @@
     <string name="skip_next">Omitir la siguiente</string>
     <string name="skipping">Se omitirá: %1$s</string>
     <string name="dont_skip">No omitir</string>
+    <string name="upcoming_channel_name">Próximas alarmas</string>
+    <string name="upcoming_alarm">Próxima alarma</string>
 </resources>

@@ -87,4 +87,6 @@
     <string name="skip_next">Skip next</string>
     <string name="skipping">Skipping %1$s</string>
     <string name="dont_skip">Don\'t skip</string>
+    <string name="upcoming_channel_name">Upcoming alarms</string>
+    <string name="upcoming_alarm">Upcoming alarm</string>
 </resources>

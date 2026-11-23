@@ -223,6 +223,7 @@ class AlarmService : Service() {
                 .setName(context.getString(R.string.missed_channel_name))
                 .build()
             NotificationManagerCompat.from(context).createNotificationChannelsCompat(listOf(ringing, missed))
+            UpcomingAlarm.createNotificationChannel(context)
         }
 
         private const val MISSED_CHANNEL_ID = "missed_alarms"

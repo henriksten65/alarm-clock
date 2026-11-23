@@ -90,4 +90,6 @@
     <string name="skip_next">Pular o próximo</string>
     <string name="skipping">Será pulado: %1$s</string>
     <string name="dont_skip">Não pular</string>
+    <string name="upcoming_channel_name">Próximos alarmes</string>
+    <string name="upcoming_alarm">Próximo alarme</string>
 </resources>

@@ -46,6 +46,9 @@ class ReceiversTest {
     private fun receive(action: String, alarmId: Int) =
         AlarmReceiver().onReceive(context, Intent(action).putExtra(EXTRA_ALARM_ID, alarmId))
 
+    private fun missedNotifications() = shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications
+        .filter { it.channelId == "missed_alarms" }
+
     private fun boot(action: String) = BootReceiver().onReceive(context, Intent(action))
 
     private fun startedServiceAlarmId(): Int? = app.nextStartedService
@@ -151,7 +154,7 @@ class ReceiversTest {
                 boot(action)
                 assertFalse("$action: missed one-time alarm is switched off", repo.get(id)!!.enabled)
             }
-        assertEquals(3, shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications.size)
+        assertEquals(3, missedNotifications().size)
     }
 
     @Test
@@ -162,7 +165,7 @@ class ReceiversTest {
             boot(action)
             assertTrue(action, repo.get(1)!!.enabled)
         }
-        assertTrue(shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications.isEmpty())
+        assertTrue(missedNotifications().isEmpty())
         assertEquals(listOf(repo.get(1)!!.nextRingMillis()), TestSupport.scheduledTimes())
     }
 

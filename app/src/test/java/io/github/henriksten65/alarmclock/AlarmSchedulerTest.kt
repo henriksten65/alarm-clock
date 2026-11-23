@@ -45,7 +45,9 @@ class AlarmSchedulerTest {
     private fun now() = System.currentTimeMillis()
     private fun dueTimes() = deviceProtectedPrefs(context, "due_times")
     private fun dueTime(id: Int): Long? = dueTimes().getLong(id.toString(), 0L).takeIf { it != 0L }
+    /** The "Missed alarm" notifications (an alarm due soon also has an "Upcoming alarm" one). */
     private fun notifications() = shadowOf(context.getSystemService(NotificationManager::class.java)).allNotifications
+        .filter { it.channelId == "missed_alarms" }
 
     private fun add(alarm: Alarm): Alarm = alarm.also { repo.upsert(it) }
 
@@ -61,7 +63,7 @@ class AlarmSchedulerTest {
         val alarm = add(Alarm(id = 1, hour = 7, minute = 0))
         assertTrue(AlarmScheduler.schedule(context, alarm))
 
-        val scheduled = TestSupport.shadowAlarmManager.scheduledAlarms.single()
+        val scheduled = TestSupport.alarmClocks.single()
         val expected = alarm.nextRingMillis()
         assertEquals(expected, scheduled.triggerAtMs)
         // setAlarmClock (not set/setExact): shows the system alarm icon and opens the app when tapped.
@@ -82,13 +84,13 @@ class AlarmSchedulerTest {
     fun eachAlarmHasItsOwnTrigger() {
         AlarmScheduler.schedule(context, add(Alarm(id = 1, hour = 7, minute = 0)))
         AlarmScheduler.schedule(context, add(Alarm(id = 2, hour = 8, minute = 0)))
-        assertEquals(2, TestSupport.shadowAlarmManager.scheduledAlarms.size)
+        assertEquals(2, TestSupport.alarmClocks.size)
     }
 
     @Test
     fun triggerFiresTheAlarmReceiver() {
         AlarmScheduler.schedule(context, add(Alarm(id = 5, hour = 7, minute = 0)))
-        val operation = shadowOf(TestSupport.shadowAlarmManager.scheduledAlarms.single().operation)
+        val operation = shadowOf(TestSupport.alarmClocks.single().operation)
         assertTrue(operation.isBroadcastIntent)
         val intent = operation.savedIntent
         assertEquals(AlarmReceiver.ACTION_FIRE, intent.action)

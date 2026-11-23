@@ -14,6 +14,8 @@ class AlarmReceiver : BroadcastReceiver() {
             ACTION_FIRE -> onAlarmFired(context, alarmId)
             ACTION_SNOOZE -> AlarmScheduler.snooze(context, alarmId)
             ACTION_DISMISS -> AlarmScheduler.stopRinging(context)
+            ACTION_UPCOMING -> UpcomingAlarm.onReminderDue(context, alarmId)
+            ACTION_DISMISS_UPCOMING -> AlarmScheduler.dismissUpcoming(context, alarmId)
         }
     }
 
@@ -21,6 +23,7 @@ class AlarmReceiver : BroadcastReceiver() {
         val repository = AlarmRepository.getInstance(context)
         val alarm = repository.get(alarmId) ?: return
         if (!alarm.enabled) return
+        UpcomingAlarm.hide(context, alarmId)
 
         // Ringing now, so any snooze is used up (and a skip that has passed).
         if (alarm.repeats) {
@@ -45,5 +48,7 @@ class AlarmReceiver : BroadcastReceiver() {
         const val ACTION_FIRE = "io.github.henriksten65.alarmclock.action.FIRE"
         const val ACTION_SNOOZE = "io.github.henriksten65.alarmclock.action.SNOOZE"
         const val ACTION_DISMISS = "io.github.henriksten65.alarmclock.action.DISMISS"
+        const val ACTION_UPCOMING = "io.github.henriksten65.alarmclock.action.UPCOMING"
+        const val ACTION_DISMISS_UPCOMING = "io.github.henriksten65.alarmclock.action.DISMISS_UPCOMING"
     }
 }

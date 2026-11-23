@@ -88,4 +88,6 @@
     <string name="skip_next">Hoppa över nästa</string>
     <string name="skipping">Hoppar över %1$s</string>
     <string name="dont_skip">Hoppa inte över</string>
+    <string name="upcoming_channel_name">Kommande alarm</string>
+    <string name="upcoming_alarm">Kommande alarm</string>
 </resources>

@@ -60,8 +60,16 @@ object TestSupport {
     val shadowAlarmManager: ShadowAlarmManager
         get() = shadowOf(context.getSystemService(AlarmManager::class.java))
 
+    /** The alarm clocks (not the "upcoming alarm" reminders) registered with AlarmManager. */
+    val alarmClocks: List<ShadowAlarmManager.ScheduledAlarm>
+        get() = shadowAlarmManager.scheduledAlarms.filter { it.alarmClockInfo != null }
+
+    /** The "upcoming alarm" reminders registered with AlarmManager. */
+    val reminders: List<ShadowAlarmManager.ScheduledAlarm>
+        get() = shadowAlarmManager.scheduledAlarms.filter { it.alarmClockInfo == null }
+
     /** The alarm clocks currently registered with AlarmManager, by trigger time. */
-    fun scheduledTimes(): List<Long> = shadowAlarmManager.scheduledAlarms.map { it.triggerAtMs }.sorted()
+    fun scheduledTimes(): List<Long> = alarmClocks.map { it.triggerAtMs }.sorted()
 
     private fun clearStatic(owner: Class<*>, name: String) {
         owner.getDeclaredField(name).apply { isAccessible = true }.set(null, null)

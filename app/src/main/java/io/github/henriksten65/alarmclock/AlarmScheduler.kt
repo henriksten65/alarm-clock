@@ -30,6 +30,7 @@ object AlarmScheduler {
                 firePendingIntent(context, alarm.id),
             )
             dueTimes(context).edit { putLong(alarm.id.toString(), triggerAtMillis) }
+            UpcomingAlarm.schedule(context, alarm, triggerAtMillis)
             true
         } catch (e: SecurityException) {
             false
@@ -39,6 +40,7 @@ object AlarmScheduler {
     fun cancel(context: Context, alarmId: Int) {
         context.getSystemService(AlarmManager::class.java).cancel(firePendingIntent(context, alarmId))
         forgetDueTime(context, alarmId)
+        UpcomingAlarm.cancel(context, alarmId)
     }
 
     /** Called when an alarm has fired and nothing is scheduled for it any more. */
@@ -143,6 +145,23 @@ object AlarmScheduler {
         repository.upsert(updated)
         if (updated.enabled) schedule(context, updated)
         return updated
+    }
+
+    /**
+     * The Dismiss button on the "Upcoming alarm" notification: the alarm won't ring this time.
+     * A snooze is cancelled, a repeating alarm skips this ring, a one-time alarm is switched off.
+     */
+    fun dismissUpcoming(context: Context, alarmId: Int) {
+        val repository = AlarmRepository.getInstance(context)
+        val alarm = repository.get(alarmId)?.takeIf { it.enabled } ?: return UpcomingAlarm.hide(context, alarmId)
+        when {
+            alarm.isSnoozed() -> cancelSnooze(context, alarmId)
+            alarm.repeats -> skipNext(context, alarmId)
+            else -> {
+                repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                cancel(context, alarmId)
+            }
+        }
     }
 
     fun stopRinging(context: Context) {

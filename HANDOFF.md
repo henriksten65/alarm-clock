@@ -25,7 +25,7 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.9** (`versionCode 14`), tagged `v2.9`: targetSdk 37 (Android 17).
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.8` and `v2.9` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are automated tests (now **162** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **175** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
 - 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
@@ -115,6 +115,7 @@ asks for features one at a time, tests them in the emulator, and then says
 | `AlarmRepository.kt` | Alarms as JSON in SharedPreferences, exposed as `StateFlow`. `nextId()` uses a persisted counter (`last_id`), so ids are never reused |
 | `AppSettings.kt` | Settings `StateFlow`s: `timeEntryMode` (DIAL/KEYBOARD), `keyboard24Hour`, `alarmSoundUri`, `snoozeMinutes`, `autoStopMinutes`, `vibrate`, `themeMode` (SYSTEM/LIGHT/DARK) |
 | `Storage.kt` | `deviceProtectedPrefs()`: device-protected storage for Direct Boot, plus a one-time move from normal storage |
+| `UpcomingAlarm.kt` | "Upcoming alarm" notification 2 h before: a second AlarmManager alarm (`setExactAndAllowWhileIdle`, action `UPCOMING`) per alarm, kept in step by `AlarmScheduler.schedule`/`cancel`; posted right away if the alarm is < 2 h away; hidden when it rings; Dismiss → `AlarmScheduler.dismissUpcoming` |
 | `AlarmScheduler.kt` | `setAlarmClock` scheduling, cancel, `rescheduleAll(catchUpMissed)`, `snooze`, `cancelSnooze`, `stopRinging`. Remembers each alarm's due time (`due_times` prefs) to find alarms missed while the phone was off |
 | `AlarmReceiver.kt` | Alarm fired: clears the snooze, reschedules repeating alarms / disables one-time alarms, starts the service. Also handles Snooze/Dismiss actions |
 | `AlarmService.kt` | Foreground service (`systemExempted` on 14+, mediaPlayback before): sound fallback chain, vibration, ringing notification with full-screen intent, 10-min auto-stop, **missed-alarm notification**, `ringingAlarmId` StateFlow, notification channels (`ringing_alarms`, `missed_alarms`) |
@@ -191,6 +192,10 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   ("Nicht auslassen") move to their own line. Checked every language on the emulator with
   `cmd locale set-app-locales <pkg> --locales de-SE` (reset with `--locales ""`). Note: a plain
   `en` app locale means en-US, i.e. a 12-hour clock, which breaks `mkalarm.sh`.
+- **Upcoming-alarm channel** (`upcoming`) is IMPORTANCE_DEFAULT with no sound/vibration, not LOW:
+  Android puts LOW ones under "Silent" and hides their status-bar icon, and the point is the icon.
+  (A first build used a LOW channel `upcoming_alarms`; importance can't be raised later, hence the new
+  id. It only ever existed in the emulator's debug build.)
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)

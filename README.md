@@ -22,6 +22,10 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 - Settings → **Appearance**: light or dark colours, or **Same as phone** (default)
 - Exact alarms via `AlarmManager.setAlarmClock()` (ring on time even in Doze; shows the
   alarm icon in the status bar)
+- **Upcoming alarm** notification from two hours before an alarm until it rings ("Upcoming alarm
+  07:30 · Work", or "Snoozed until 06:25"): an icon in the status bar, no sound. Its **Dismiss**
+  button skips just that ring (a one-time alarm switches off, a repeating one skips to its next
+  day, a snooze is cancelled)
 - When an alarm rings: looping alarm sound + vibration from a foreground service,
   a full-screen ring screen (also over the lock screen), and a notification with
   **Snooze** and **Dismiss**
@@ -111,6 +115,7 @@ app/src/main/java/io/github/henriksten65/alarmclock/
   AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
   Storage.kt          device-protected SharedPreferences (Direct Boot) + migration
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing
+  UpcomingAlarm.kt    "Upcoming alarm" notification two hours before (own AlarmManager reminder)
   AlarmReceiver.kt    fires when an alarm goes off; handles Snooze/Dismiss actions
   AlarmService.kt     foreground service: sound, vibration, ringing notification
   BootReceiver.kt     reschedules alarms after reboot / time changes
@@ -126,7 +131,7 @@ app/src/test/…        automated tests (see "Automated tests")
 | Permission | Why |
 |---|---|
 | `USE_EXACT_ALARM` (API 33+) / `SCHEDULE_EXACT_ALARM` (API 31–32) | exact alarm times |
-| `POST_NOTIFICATIONS` | ringing notification (asked at first launch on Android 13+) |
+| `POST_NOTIFICATIONS` | ringing, upcoming and missed-alarm notifications (asked at first launch on Android 13+) |
 | `USE_FULL_SCREEN_INTENT` | show the ring screen over the lock screen |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SYSTEM_EXEMPTED` (Android 14+), `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (older) | play the alarm sound from a foreground service |
 | `RECEIVE_BOOT_COMPLETED` | restore alarms after reboot |
@@ -138,7 +143,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 162 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 175 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -149,6 +154,7 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AppSettingsTest` | defaults, persistence, unknown stored values |
 | `TimeFormatTest` | card/summary texts, week order per locale, countdowns |
 | `AlarmSchedulerTest` | AlarmManager scheduling, snooze, skip, rescheduling after reboot (missed alarms) / time change |
+| `UpcomingAlarmTest` | "Upcoming alarm" notification: reminder two hours before, shown/hidden as alarms change or ring, Dismiss |
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
 | `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm notification |
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
