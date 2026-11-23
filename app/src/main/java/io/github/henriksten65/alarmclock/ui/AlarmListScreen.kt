@@ -732,7 +732,9 @@ private fun EditAlarmDialog(
     var days by rememberSaveable(initial.id) { mutableIntStateOf(initial.days) }
     var soundUri by rememberSaveable(initial.id) { mutableStateOf(initial.soundUri) }
 
-    var pickingTime by rememberSaveable { mutableStateOf(false) }
+    // A new alarm with typed times opens straight on the typed-time dialog, so the number
+    // keyboard is up without tapping the time first. Saveable, so rotating doesn't reopen it.
+    var pickingTime by rememberSaveable { mutableStateOf(isNew && timeEntryMode == TimeEntryMode.KEYBOARD) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

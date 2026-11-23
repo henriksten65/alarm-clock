@@ -25,7 +25,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.9** (`versionCode 14`), tagged `v2.9`: targetSdk 37 (Android 17).
 - **Version 2.10** (`versionCode 15`), tagged `v2.10`: "Upcoming alarm" notification 2 h before an alarm (175 tests).
 - **Version 3.0** (`versionCode 16`), tagged `v3.0`: Timer tab with a status-bar countdown (197 tests).
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0` (latest); see §3 for how they're made.
+- **Version 3.1** (`versionCode 17`), tagged `v3.1`: a new alarm in Keyboard mode opens straight on the typed-time dialog (keypad up).
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.10`, `v3.0` and `v3.1` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **197** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
@@ -47,6 +48,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v3.1` | New alarm with Keyboard time entry opens on the typed-time dialog with the keypad up (`mkalarm.sh` no longer taps the time) |
   | `v3.0` | **Timer** tab (keypad entry, Pause/Resume/+1 min/Reset, countdown notification in the status bar, rings like an alarm) |
   | `v2.10` | **Upcoming alarm** notification from 2 h before (status-bar icon, Dismiss skips that ring) |
   | `v2.9` | **targetSdk 37** (Android 16/17 behaviour changes checked: background audio, predictive back) |

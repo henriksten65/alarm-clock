@@ -11,7 +11,8 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   "Default" (the sound from Settings), one of the phone's alarm sounds, or any audio file
 - Settings (gear icon): choose how the time is entered — **Clock dial** (Material 3 time picker)
   or **Keyboard**, where you type the digits on the number keypad (`630` → 6:30, `1845` → 18:45,
-  with an AM/PM switch on 12-hour phones). The **Typed times use 24-hour clock** switch makes
+  with an AM/PM switch on 12-hour phones); a new alarm then opens straight on the typed time with the
+  keypad showing. The **Typed times use 24-hour clock** switch makes
   typed digits always 24-hour (no AM/PM), whatever the phone's time format
 - Settings → **Alarm sound**: one of the phone's alarm sounds (system sound picker) or any audio
   file (document picker; the app keeps read access to it), used by alarms without their own sound.

@@ -2,9 +2,8 @@
 # mkalarm.sh HHMM [Day ...]  – create an alarm through the UI (keyboard time entry, 24-hour typing)
 ADB=~/Android/Sdk/platform-tools/adb; UI="python3 $(dirname "$0")/ui.py"
 HHMM=$1; shift
-$UI tap "Add alarm"; sleep 0.8
-T=$($UI dump | grep -oE "^'[0-9]{2}:[0-9]{2}'" | tail -1 | tr -d "'")
-$UI tap "$T"; sleep 1
+# With keyboard time entry, "Add alarm" opens straight on the typed-time dialog.
+$UI tap "Add alarm"; sleep 1.5
 for k in $(echo $HHMM | grep -o .); do $ADB shell input keyevent KEYCODE_$k; sleep 0.15; done
 $ADB shell input keyevent KEYCODE_ENTER; sleep 0.6
 # Hide the keyboard with Back (only when it's showing): Escape closes the whole dialog since Compose 1.12.
