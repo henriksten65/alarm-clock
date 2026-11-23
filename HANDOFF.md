@@ -23,7 +23,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 2.7** (`versionCode 12`), tagged `v2.7`: translations (sv, de, fr, es, pt); 162 tests.
 - **Version 2.8** (`versionCode 13`), tagged `v2.8`: library upgrade (AGP 9.5.1, Gradle 9.8.2, Kotlin 2.4.21, Compose BOM 2026.09.00, compileSdk 37).
 - **Version 2.9** (`versionCode 14`), tagged `v2.9`: targetSdk 37 (Android 17).
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.8` and `v2.9` (latest); see §3 for how they're made.
+- **Version 2.10** (`versionCode 15`), tagged `v2.10`: "Upcoming alarm" notification 2 h before an alarm (175 tests).
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.9` and `v2.10` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **175** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
@@ -45,6 +46,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.2` | Ready for installing directly (no Play upload yet, user's choice): app id `io.github.henriksten65.alarmclock` (GitHub user `henriksten65`), release signing, R8 minify + resource shrinking, debug builds get `.debug` |
   | `v2.3` | "Skip next" for repeating alarms (`Alarm.skippedAt`); cards refresh every minute |
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
+  | `v2.10` | **Upcoming alarm** notification from 2 h before (status-bar icon, Dismiss skips that ring) |
   | `v2.9` | **targetSdk 37** (Android 16/17 behaviour changes checked: background audio, predictive back) |
   | `v2.8` | **Library upgrade**: AGP 9.5.1, Gradle 9.8.2, Kotlin 2.4.21, Compose BOM 2026.09.00, AndroidX, compileSdk 37 |
   | `v2.7` | **Translations**: Swedish, German, French, Spanish, Portuguese; per-app language on Android 13+; long button texts on cards wrap |
