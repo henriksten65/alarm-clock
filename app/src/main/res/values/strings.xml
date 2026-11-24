@@ -23,6 +23,10 @@
     <string name="channel_name">Ringing alarms</string>
     <string name="missed_channel_name">Missed alarms</string>
     <string name="missed_alarm">Missed alarm: %1$s</string>
+    <string name="missed_timer">Missed timer: %1$s</string>
+    <string name="missed_timer_unnamed">Missed timer</string>
+    <string name="missed_replaced_by_alarm">Stopped ringing when another alarm went off</string>
+    <string name="missed_replaced_by_timer">Stopped ringing when a timer went off</string>
     <plurals name="missed_alarm_text">
         <item quantity="one">Rang for %1$d minute without being dismissed</item>
         <item quantity="other">Rang for %1$d minutes without being dismissed</item>

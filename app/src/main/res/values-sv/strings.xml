@@ -24,6 +24,10 @@
     <string name="channel_name">Ringande alarm</string>
     <string name="missed_channel_name">Missade alarm</string>
     <string name="missed_alarm">Missat alarm: %1$s</string>
+    <string name="missed_timer">Missad timer: %1$s</string>
+    <string name="missed_timer_unnamed">Missad timer</string>
+    <string name="missed_replaced_by_alarm">Slutade ringa när ett annat alarm ringde</string>
+    <string name="missed_replaced_by_timer">Slutade ringa när en timer ringde</string>
     <plurals name="missed_alarm_text">
         <item quantity="one">Ringde i %1$d minut utan att stängas av</item>
         <item quantity="other">Ringde i %1$d minuter utan att stängas av</item>

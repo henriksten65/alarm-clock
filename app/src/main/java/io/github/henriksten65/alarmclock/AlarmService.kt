@@ -52,6 +52,11 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val alarmId = intent?.getIntExtra(EXTRA_ALARM_ID, -1) ?: -1
         val alarm = AlarmRepository.getInstance(this).get(alarmId)
+        // Another alarm or timer was ringing: this one takes over, so tell the user they missed it.
+        _ringingAlarmId.value?.takeIf { it != alarmId }?.let { replaced ->
+            val why = if (Timer.timerIdOf(alarmId) != null) R.string.missed_replaced_by_timer else R.string.missed_replaced_by_alarm
+            notifyMissedRing(this, replaced, getString(why))
+        }
         _ringingAlarmId.value = alarmId
 
         createNotificationChannel(this)
@@ -80,8 +85,8 @@ class AlarmService : Service() {
     override fun onDestroy() {
         handler.removeCallbacks(autoStop)
         if (timedOut) {
-            _ringingAlarmId.value?.let { AlarmRepository.getInstance(this).get(it) }?.let { alarm ->
-                notifyMissed(this, alarm, resources.getQuantityString(R.plurals.missed_alarm_text, autoStopMinutes, autoStopMinutes))
+            _ringingAlarmId.value?.let {
+                notifyMissedRing(this, it, resources.getQuantityString(R.plurals.missed_alarm_text, autoStopMinutes, autoStopMinutes))
             }
         }
         player?.run {
@@ -198,11 +203,27 @@ class AlarmService : Service() {
         /** The id of the alarm that is ringing right now, or null. */
         val ringingAlarmId: StateFlow<Int?> = _ringingAlarmId.asStateFlow()
 
+        /** A "Missed …" notification for whatever rang as [ringId] (an alarm or a timer), with [text] saying why. */
+        fun notifyMissedRing(context: Context, ringId: Int, text: String) {
+            when (val timerId = Timer.timerIdOf(ringId)) {
+                null -> AlarmRepository.getInstance(context).get(ringId)?.let { notifyMissed(context, it, text) }
+                else -> {
+                    val label = Timer.get(context, timerId)?.label?.trim().orEmpty()
+                    val title = if (label.isEmpty()) context.getString(R.string.missed_timer_unnamed) else context.getString(R.string.missed_timer, label)
+                    postMissed(context, MISSED_TIMER_NOTIFICATION_ID_BASE + timerId, R.drawable.ic_timer, title, text)
+                }
+            }
+        }
+
         /** "Missed alarm: 06:15 · Work" with [text] saying why. */
         fun notifyMissed(context: Context, alarm: Alarm, text: String) {
             val what = listOf(formatTime(context, alarm.hour, alarm.minute), alarm.label)
                 .filter { it.isNotBlank() }
                 .joinToString(" · ")
+            postMissed(context, MISSED_NOTIFICATION_ID_BASE + alarm.id, R.drawable.ic_alarm, context.getString(R.string.missed_alarm, what), text)
+        }
+
+        private fun postMissed(context: Context, id: Int, icon: Int, title: String, text: String) {
             val openApp = PendingIntent.getActivity(
                 context,
                 0,
@@ -211,8 +232,8 @@ class AlarmService : Service() {
             )
             createNotificationChannel(context)
             val notification = NotificationCompat.Builder(context, MISSED_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_alarm)
-                .setContentTitle(context.getString(R.string.missed_alarm, what))
+                .setSmallIcon(icon)
+                .setContentTitle(title)
                 .setContentText(text)
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setWhen(System.currentTimeMillis())
@@ -221,7 +242,7 @@ class AlarmService : Service() {
                 .setAutoCancel(true)
                 .build()
             try {
-                NotificationManagerCompat.from(context).notify(MISSED_NOTIFICATION_ID_BASE + alarm.id, notification)
+                NotificationManagerCompat.from(context).notify(id, notification)
             } catch (e: SecurityException) {
                 // Notifications are off; the app already shows a banner about that.
             }
@@ -244,6 +265,7 @@ class AlarmService : Service() {
 
         private const val MISSED_CHANNEL_ID = "missed_alarms"
         private const val MISSED_NOTIFICATION_ID_BASE = 1000
+        private const val MISSED_TIMER_NOTIFICATION_ID_BASE = 4000
 
         private const val NOTIFICATION_ID = 1
     }

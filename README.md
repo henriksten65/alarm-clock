@@ -31,7 +31,10 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   a full-screen ring screen (also over the lock screen), and a notification with
   **Snooze** and **Dismiss**
 - On the ring screen, Back doesn't hide a ringing alarm; it shows "Tap Dismiss or Snooze to stop the alarm"
-- Rings stop automatically after the "Stop ringing after" time, followed by a "Missed alarm: 06:15 · Label" notification
+- Rings stop automatically after the "Stop ringing after" time, followed by a "Missed alarm: 06:15 · Label"
+  (or "Missed timer: Label") notification
+- If another alarm or timer goes off while one rings, the newer one takes over, and the one it stopped
+  gets a "Missed alarm" / "Missed timer" notification ("Stopped ringing when a timer went off")
 - One-time alarms switch themselves off after ringing; repeating alarms reschedule for the next selected day
 - Alarms are re-registered after reboot, app update, and time / time-zone changes — and they
   ring even if the phone restarted and hasn't been unlocked yet (Direct Boot: alarm data lives in
@@ -57,7 +60,8 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   bar shows a timer icon and a live countdown notification per timer ("Eggs", or "Eggs paused ·
   4:32") with the same buttons. When one ends it rings like an alarm (sound, vibration, ring screen
   over the lock screen: "Time's up: Eggs") with **Stop** and **+1 min**; if another timer or alarm
-  ends while one rings, the newer one takes over the sound and the ring screen. Timers keep running
+  ends while one rings, the newer one takes over the sound and the ring screen (the stopped one gets a
+  "Missed" notification). Timers keep running
   through app updates, clock changes and reboots (a timer that ended while the phone was off rings
   if it's only a little late)
 - Warning banners (with a button to fix it) when something would stop alarms from being seen or
@@ -158,7 +162,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 211 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 215 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -173,7 +177,7 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `ui/TimerScreenTest`, `ui/LabelDialogTest` | Alarms/Timer tabs, the keypad with a label, timer cards (Start/Pause/Resume/Reset/delete), adding a second timer, Time's up, the label dialog |
 | `UpcomingAlarmTest` | "Upcoming alarm" notification: reminder two hours before, shown/hidden as alarms change or ring, Dismiss |
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
-| `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm notification |
+| `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm/timer notification, a ring taken over by another |
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
 | `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
 | `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings) |

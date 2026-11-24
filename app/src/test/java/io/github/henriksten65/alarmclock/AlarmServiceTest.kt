@@ -204,4 +204,55 @@ class AlarmServiceTest {
         start(1).destroy()
         assertTrue(notifications().isEmpty())
     }
+
+    @Test
+    fun aTimerTakingOverReportsTheAlarmItStoppedAsMissed() {
+        repo.upsert(Alarm(id = 1, hour = 6, minute = 15, label = "Work"))
+        start(1)
+        val eggs = Timer.add(context, 5 * 60_000L, "Eggs")
+        start(Timer.ringId(eggs))
+        assertEquals(Timer.ringId(eggs), AlarmService.ringingAlarmId.value)
+
+        val missed = shadowOf(notifications().single { it.channelId == "missed_alarms" })
+        assertEquals("Missed alarm: 06:15 · Work", missed.contentTitle)
+        assertEquals("Stopped ringing when a timer went off", missed.contentText)
+    }
+
+    @Test
+    fun anAlarmTakingOverReportsTheTimerItStoppedAsMissed() {
+        val eggs = Timer.add(context, 5 * 60_000L, "Eggs")
+        val plain = Timer.add(context, 3 * 60_000L)
+        start(Timer.ringId(eggs))
+        start(Timer.ringId(plain))
+        repo.upsert(Alarm(id = 1, hour = 7, minute = 0))
+        start(1)
+
+        val missed = notifications().filter { it.channelId == "missed_alarms" }.map { shadowOf(it) }
+        assertEquals(listOf("Missed timer: Eggs", "Missed timer"), missed.map { it.contentTitle.toString() })
+        assertEquals(
+            listOf("Stopped ringing when a timer went off", "Stopped ringing when another alarm went off"),
+            missed.map { it.contentText.toString() },
+        )
+    }
+
+    @Test
+    fun theSameAlarmRingingAgainIsNotReportedAsMissed() {
+        repo.upsert(Alarm(id = 1, hour = 7, minute = 0))
+        start(1)
+        start(1)
+        assertTrue(notifications().none { it.channelId == "missed_alarms" })
+    }
+
+    @Test
+    fun aTimerThatRingsUntilTheAutoStopTimeIsReportedAsMissed() {
+        TestSupport.settings.setAutoStopMinutes(5)
+        val tea = Timer.add(context, 3 * 60_000L, "Tea")
+        val controller = start(Timer.ringId(tea))
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMinutes(5))
+        controller.destroy()
+
+        val missed = shadowOf(notifications().single { it.channelId == "missed_alarms" })
+        assertEquals("Missed timer: Tea", missed.contentTitle)
+        assertEquals("Rang for 5 minutes without being dismissed", missed.contentText)
+    }
 }

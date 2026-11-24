@@ -24,6 +24,10 @@
     <string name="channel_name">Klingelnde Wecker</string>
     <string name="missed_channel_name">Verpasste Wecker</string>
     <string name="missed_alarm">Verpasster Wecker: %1$s</string>
+    <string name="missed_timer">Verpasster Timer: %1$s</string>
+    <string name="missed_timer_unnamed">Verpasster Timer</string>
+    <string name="missed_replaced_by_alarm">Hat aufgehört zu klingeln, als ein anderer Wecker klingelte</string>
+    <string name="missed_replaced_by_timer">Hat aufgehört zu klingeln, als ein Timer klingelte</string>
     <plurals name="missed_alarm_text">
         <item quantity="one">Hat %1$d Minute geklingelt, ohne beendet zu werden</item>
         <item quantity="other">Hat %1$d Minuten geklingelt, ohne beendet zu werden</item>

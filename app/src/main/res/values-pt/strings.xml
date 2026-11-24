@@ -24,6 +24,10 @@
     <string name="channel_name">Alarmes tocando</string>
     <string name="missed_channel_name">Alarmes perdidos</string>
     <string name="missed_alarm">Alarme perdido: %1$s</string>
+    <string name="missed_timer">Temporizador perdido: %1$s</string>
+    <string name="missed_timer_unnamed">Temporizador perdido</string>
+    <string name="missed_replaced_by_alarm">Parou de tocar quando outro alarme tocou</string>
+    <string name="missed_replaced_by_timer">Parou de tocar quando um temporizador tocou</string>
     <plurals name="missed_alarm_text">
         <item quantity="one">Tocou por %1$d minuto sem ser parado</item>
         <item quantity="many">Tocou por %1$d minutos sem ser parado</item>

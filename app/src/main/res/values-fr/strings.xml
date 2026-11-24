@@ -24,6 +24,10 @@
     <string name="channel_name">Alarmes en cours</string>
     <string name="missed_channel_name">Alarmes manquées</string>
     <string name="missed_alarm">Alarme manquée : %1$s</string>
+    <string name="missed_timer">Minuteur manqué : %1$s</string>
+    <string name="missed_timer_unnamed">Minuteur manqué</string>
+    <string name="missed_replaced_by_alarm">A cessé de sonner quand une autre alarme a sonné</string>
+    <string name="missed_replaced_by_timer">A cessé de sonner quand un minuteur a sonné</string>
     <plurals name="missed_alarm_text">
         <item quantity="one">A sonné pendant %1$d minute sans être arrêtée</item>
         <item quantity="many">A sonné pendant %1$d minutes sans être arrêtée</item>
