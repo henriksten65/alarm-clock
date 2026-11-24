@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
         // Only on a fresh start: during a rotation an "Undo" for a deleted alarm may still be showing.
         if (savedInstanceState == null) AlarmSound.releaseUnused(this)
 
-        // The tab from before a rotation, or the one asked for (the timer notification opens Timer).
+        // The tab from before a rotation, or the one asked for (the timer and stopwatch notifications open their tabs).
         tab = savedInstanceState?.getString(KEY_TAB)?.let { Tab.valueOf(it) } ?: tabFrom(intent) ?: Tab.ALARMS
 
         val repository = AlarmRepository.getInstance(this)
@@ -87,11 +87,16 @@ class MainActivity : ComponentActivity() {
         outState.putString(KEY_TAB, tab.name)
     }
 
-    private fun tabFrom(intent: Intent?): Tab? = if (intent?.getStringExtra(EXTRA_TAB) == TAB_TIMER) Tab.TIMER else null
+    private fun tabFrom(intent: Intent?): Tab? = when (intent?.getStringExtra(EXTRA_TAB)) {
+        TAB_TIMER -> Tab.TIMER
+        TAB_STOPWATCH -> Tab.STOPWATCH
+        else -> null
+    }
 
     companion object {
         const val EXTRA_TAB = "io.github.henriksten65.alarmclock.EXTRA_TAB"
         const val TAB_TIMER = "timer"
+        const val TAB_STOPWATCH = "stopwatch"
         private const val KEY_TAB = "tab"
     }
 }

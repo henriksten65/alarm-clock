@@ -96,6 +96,11 @@
     <string name="upcoming_alarm">Anstehender Wecker</string>
     <string name="tab_alarms">Wecker</string>
     <string name="timer">Timer</string>
+    <string name="stopwatch">Stoppuhr</string>
+    <string name="stopwatch_paused">Stoppuhr pausiert</string>
+    <string name="lap">Runde</string>
+    <string name="lap_number">Runde %1$d</string>
+    <string name="lap_description">%1$s: %2$s, gesamt %3$s</string>
     <string name="timer_paused">Timer pausiert</string>
     <string name="times_up">Zeit abgelaufen</string>
     <string name="start">Starten</string>

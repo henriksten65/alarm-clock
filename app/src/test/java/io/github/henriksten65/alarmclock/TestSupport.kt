@@ -39,9 +39,10 @@ object TestSupport {
         resetTimer()
     }
 
-    /** [Timer] reads its state from storage again on next use. */
+    /** [Timer] and [Stopwatch] read their state from storage again on next use. */
     private fun resetTimer() {
         Timer::class.java.getDeclaredField("loaded").apply { isAccessible = true }.setBoolean(Timer, false)
+        Stopwatch::class.java.getDeclaredField("loaded").apply { isAccessible = true }.setBoolean(Stopwatch, false)
     }
 
     /** Pretends an alarm is ringing (or nothing, for null), as [AlarmService] does while it runs. */

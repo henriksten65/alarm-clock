@@ -64,6 +64,11 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   "Missed" notification). Timers keep running
   through app updates, clock changes and reboots (a timer that ended while the phone was off rings
   if it's only a little late)
+- **Stopwatch** tab (one stopwatch): **Start**, then **Lap** and **Pause**; when paused, **Resume** and
+  **Reset**. Shows hundredths ("1:05.42"); laps are listed newest first with each lap's time and the
+  total so far, the lap in progress on top. While it runs or is paused, a notification shows it
+  counting up ("Stopwatch", "Lap 3") with **Pause/Lap** or **Resume/Reset**. It keeps going through
+  app updates, clock changes and reboots
 - Warning banners (with a button to fix it) when something would stop alarms from being seen or
   heard: exact alarms not allowed, notifications off, full-screen alerts off (Android 14+),
   alarm volume at its lowest, Do Not Disturb silencing alarms
@@ -134,6 +139,8 @@ app/src/main/java/io/github/henriksten65/alarmclock/
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing
   Timer.kt            the timers: list + state, their AlarmManager alarms, countdown notifications
   TimerReceiver.kt    timer done + notification buttons (Pause/Resume/+1 min/Reset)
+  Stopwatch.kt        the stopwatch: state, laps, count-up notification
+  StopwatchReceiver.kt  stopwatch notification buttons (Pause/Resume/Lap/Reset)
   UpcomingAlarm.kt    "Upcoming alarm" notification two hours before (own AlarmManager reminder)
   AlarmReceiver.kt    fires when an alarm goes off; handles Snooze/Dismiss actions
   AlarmService.kt     foreground service: sound, vibration, ringing notification
@@ -150,7 +157,7 @@ app/src/test/…        automated tests (see "Automated tests")
 | Permission | Why |
 |---|---|
 | `USE_EXACT_ALARM` (API 33+) / `SCHEDULE_EXACT_ALARM` (API 31–32) | exact alarm times |
-| `POST_NOTIFICATIONS` | ringing, upcoming and missed-alarm notifications (asked at first launch on Android 13+) |
+| `POST_NOTIFICATIONS` | ringing, upcoming, missed-alarm, timer and stopwatch notifications (asked at first launch on Android 13+) |
 | `USE_FULL_SCREEN_INTENT` | show the ring screen over the lock screen |
 | `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_SYSTEM_EXEMPTED` (Android 14+), `FOREGROUND_SERVICE_MEDIA_PLAYBACK` (older) | play the alarm sound from a foreground service |
 | `RECEIVE_BOOT_COMPLETED` | restore alarms after reboot |
@@ -162,7 +169,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 215 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 231 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -175,6 +182,7 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AlarmSchedulerTest` | AlarmManager scheduling, snooze, skip, rescheduling after reboot (missed alarms) / time change |
 | `TimerTest` | timers: add/start/pause/resume/+1 min/reset/delete, labels, independence, their alarms and notifications, ringing, reboots, moving 3.0's timer over |
 | `ui/TimerScreenTest`, `ui/LabelDialogTest` | Alarms/Timer tabs, the keypad with a label, timer cards (Start/Pause/Resume/Reset/delete), adding a second timer, Time's up, the label dialog |
+| `StopwatchTest`, `ui/StopwatchScreenTest` | stopwatch: start/pause/resume/lap/reset, notification and its buttons, app restart, reboot and clock change, the Stopwatch tab |
 | `UpcomingAlarmTest` | "Upcoming alarm" notification: reminder two hours before, shown/hidden as alarms change or ring, Dismiss |
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
 | `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm/timer notification, a ring taken over by another |

@@ -96,6 +96,11 @@
     <string name="upcoming_alarm">Kommande alarm</string>
     <string name="tab_alarms">Alarm</string>
     <string name="timer">Timer</string>
+    <string name="stopwatch">Stoppur</string>
+    <string name="stopwatch_paused">Stoppuret pausat</string>
+    <string name="lap">Varv</string>
+    <string name="lap_number">Varv %1$d</string>
+    <string name="lap_description">%1$s: %2$s, totalt %3$s</string>
     <string name="timer_paused">Timer pausad</string>
     <string name="times_up">Tiden är ute</string>
     <string name="start">Starta</string>

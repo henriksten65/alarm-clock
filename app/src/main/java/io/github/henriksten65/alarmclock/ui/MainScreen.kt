@@ -31,10 +31,11 @@ import io.github.henriksten65.alarmclock.R
 enum class Tab(val label: Int, val icon: Int) {
     ALARMS(R.string.tab_alarms, R.drawable.ic_alarm),
     TIMER(R.string.timer, R.drawable.ic_timer),
+    STOPWATCH(R.string.stopwatch, R.drawable.ic_stopwatch),
 }
 
 /**
- * The Alarms and Timer tabs: a bar at the bottom, or a rail at the side when the window is
+ * The Alarms, Timer and Stopwatch tabs: a bar at the bottom, or a rail at the side when the window is
  * short (a phone in landscape), so the bar doesn't take up a fifth of the height.
  */
 @Composable
@@ -44,7 +45,7 @@ fun MainScreen(
     tab: Tab,
     onTabChange: (Tab) -> Unit,
 ) {
-    // Back on the Timer tab goes to the alarms, the app's start screen.
+    // Back on the Timer or Stopwatch tab goes to the alarms, the app's start screen.
     BackHandler(enabled = tab != Tab.ALARMS) { onTabChange(Tab.ALARMS) }
 
     val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
@@ -52,6 +53,7 @@ fun MainScreen(
         when (tab) {
             Tab.ALARMS -> AlarmListScreen(repository, settings, modifier)
             Tab.TIMER -> TimerScreen(modifier)
+            Tab.STOPWATCH -> StopwatchScreen(modifier)
         }
     }
 

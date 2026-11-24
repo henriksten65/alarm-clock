@@ -98,6 +98,11 @@
     <string name="upcoming_alarm">Alarme à venir</string>
     <string name="tab_alarms">Alarmes</string>
     <string name="timer">Minuteur</string>
+    <string name="stopwatch">Chronomètre</string>
+    <string name="stopwatch_paused">Chronomètre en pause</string>
+    <string name="lap">Tour</string>
+    <string name="lap_number">Tour %1$d</string>
+    <string name="lap_description">%1$s : %2$s, total %3$s</string>
     <string name="timer_paused">Minuteur en pause</string>
     <string name="times_up">Temps écoulé</string>
     <string name="start">Démarrer</string>

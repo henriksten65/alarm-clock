@@ -30,9 +30,10 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 3.3** (`versionCode 19`), tagged `v3.3`: "Missed" notice when a ring is taken over by another alarm/timer (215 tests).
 - **Version 3.4** (`versionCode 20`), tagged `v3.4`: lint fixes and patch upgrades (Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1); no user-visible changes.
 - **Version 3.5** (`versionCode 21`), tagged `v3.5`: Compose BOM 2026.11.01, compileSdk 37.1; lint clean; no user-visible changes.
+- **After 3.5 (not released yet):** Stopwatch tab (one stopwatch, laps, count-up notification; `Stopwatch.kt`, `StopwatchReceiver.kt`, `ui/StopwatchScreen.kt`); 231 tests.
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.5` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
-  Since 2.5 there are automated tests (now **215** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
+  Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
 - 2.6: screen-size, rotation, large-text and screen-reader fixes (§5 "Screens").
 - Git history and tags:
