@@ -75,7 +75,7 @@ asks for features one at a time, tests them in the emulator, and then says
 ## 3. Build & run (environment specifics)
 
 - **JDK:** the system Java and Android Studio's bundled JBR are both **JDK 25**, so Gradle
-  must be **≥ 9.1** (now 9.8.2; AGP 8.x doesn't run on Gradle ≥ 9.6). Build with:
+  must be **≥ 9.1** (now 9.9.2; AGP 8.x doesn't run on Gradle ≥ 9.6). Build with:
   `JAVA_HOME=/mnt/data2/dev/android-studio/jbr ./gradlew installDebug`
 - **GitHub Release** (when the user asks for "a release"): after the version commit + tag are
   pushed, `gh release create vX <apk> --repo henriksten65/alarm-clock --title "Alarm Clock X"
@@ -87,9 +87,9 @@ asks for features one at a time, tests them in the emulator, and then says
   `~/.android/keystores/alarmclock-release.jks` (alias `alarmclock`). The passwords are in the
   gitignored `keystore.properties` in the repo root. Without that file the release APK is
   unsigned. The user was told to back both up: every update must use the same key.
-- Versions (upgraded 2026-11-22): AGP 9.5.1 · Gradle 9.8.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 ·
-  core 1.19.1 · lifecycle 2.11.0 · activity 1.13.0 · Robolectric 4.17 · compileSdk **37** (required by
-  these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too) ·
+- Versions (upgraded 2026-11-22, patch upgrades 2026-11-24): AGP 9.5.2 · Gradle 9.9.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 ·
+  core 1.19.1 · lifecycle 2.11.1 · activity 1.13.0 · Robolectric 4.18.1 · compileSdk **37** (required by
+  these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too; Compose BOM 2026.11.01 needs 37.1, not installed, so Compose stays) ·
   targetSdk **37** (since 2.9) · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
   `kotlin-compose` plugin; its version sets the Kotlin version). Versions were picked ≥ ~2 weeks old;
   lint still lists the newest (AGP 9.5.2, BOM 2026.11.01, lifecycle 2.11.1, Robolectric 4.18.1, Gradle 9.9.2).
