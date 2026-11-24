@@ -98,7 +98,7 @@ asks for features one at a time, tests them in the emulator, and then says
   these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too; Compose BOM 2026.11 needs 37.1: `android-37.1` installed 2026-11-24, set with `compileSdk { version = release(37) { minorApiLevel = 1 } }`) ·
   targetSdk **37** (since 2.9) · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
   `kotlin-compose` plugin; its version sets the Kotlin version). Versions were picked ≥ ~2 weeks old;
-  since 2026-11-24 all are the newest and lint shows no warnings.
+  since 2026-11-24 all are the newest; no lint or Kotlin compiler warnings (check with `--rerun-tasks` to see compiler warnings).
 - **targetSdk 37** (Android 16 + 17 behaviour changes), checked on the API 37 emulator: the alarm rings
   with sound with the screen off (`dumpsys audio`: `state:started`, `mutedState:none`); Back on the ring
   screen still only shows the hint (predictive back; we use `OnBackPressedCallback`); "Turn up" still
