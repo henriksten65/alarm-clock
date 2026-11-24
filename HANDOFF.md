@@ -28,7 +28,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 3.1** (`versionCode 17`), tagged `v3.1`: a new alarm in Keyboard mode opens straight on the typed-time dialog (keypad up).
 - **Version 3.2** (`versionCode 18`), tagged `v3.2`: several timers with labels (211 tests).
 - **Version 3.3** (`versionCode 19`), tagged `v3.3`: "Missed" notice when a ring is taken over by another alarm/timer (215 tests).
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.3` (latest); see §3 for how they're made.
+- **Version 3.4** (`versionCode 20`), tagged `v3.4`: lint fixes and patch upgrades (Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1); no user-visible changes.
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.4` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **215** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
@@ -52,6 +53,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v2.4` | Settings → **Appearance**: same as phone (default), light, dark |
   | `v3.2` | **Several timers with labels** (cards, + to add, tap label to rename, × to delete; one notification each); ring screen follows whatever rings now |
   | `v3.3` | **Missed notice on takeover**: when another alarm or timer rings while one rings, the stopped one gets "Missed alarm/timer … — Stopped ringing when a timer/another alarm went off"; a timer that rings until auto-stop gets "Missed timer" too. User decided: finished timers stay in the list; card text colour stays |
+  | `v3.4` | **Maintenance**: lint warnings fixed (toUri, mipmap-anydpi, InlinedApi note); Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1. Compose BOM kept (2026.11.01 needs compileSdk 37.1) |
   | `v3.1` | New alarm with Keyboard time entry opens on the typed-time dialog with the keypad up (`mkalarm.sh` no longer taps the time) |
   | `v3.0` | **Timer** tab (keypad entry, Pause/Resume/+1 min/Reset, countdown notification in the status bar, rings like an alarm) |
   | `v2.10` | **Upcoming alarm** notification from 2 h before (status-bar icon, Dismiss skips that ring) |
