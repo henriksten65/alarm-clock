@@ -117,7 +117,7 @@ to the release app.
 
 ## Versions
 
-AGP 9.5.2 · Gradle 9.9.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 · compileSdk 37 · targetSdk 37 · minSdk 26.
+AGP 9.5.2 · Gradle 9.9.2 · Kotlin 2.4.21 · Compose BOM 2026.11.01 · compileSdk 37.1 · targetSdk 37 · minSdk 26.
 AGP 9 compiles Kotlin itself, so there is no separate `org.jetbrains.kotlin.android` plugin.
 All versions live in `gradle/libs.versions.toml`; Android Studio will offer upgrades.
 

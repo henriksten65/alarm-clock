@@ -89,9 +89,9 @@ asks for features one at a time, tests them in the emulator, and then says
   `~/.android/keystores/alarmclock-release.jks` (alias `alarmclock`). The passwords are in the
   gitignored `keystore.properties` in the repo root. Without that file the release APK is
   unsigned. The user was told to back both up: every update must use the same key.
-- Versions (upgraded 2026-11-22, patch upgrades 2026-11-24): AGP 9.5.2 · Gradle 9.9.2 · Kotlin 2.4.21 · Compose BOM 2026.09.00 ·
-  core 1.19.1 · lifecycle 2.11.1 · activity 1.13.0 · Robolectric 4.18.1 · compileSdk **37** (required by
-  these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too; Compose BOM 2026.11.01 needs 37.1, not installed, so Compose stays) ·
+- Versions (upgraded 2026-11-22, patch upgrades 2026-11-24): AGP 9.5.2 · Gradle 9.9.2 · Kotlin 2.4.21 · Compose BOM 2026.11.01 ·
+  core 1.19.1 · lifecycle 2.11.1 · activity 1.13.0 · Robolectric 4.18.1 · compileSdk **37.1** (required by
+  these AndroidX versions; platform `android-37.0` is installed, `android-36` was auto-installed too; Compose BOM 2026.11 needs 37.1: `android-37.1` installed 2026-11-24, set with `compileSdk { version = release(37) { minorApiLevel = 1 } }`) ·
   targetSdk **37** (since 2.9) · minSdk 26. AGP 9 has built-in Kotlin: the `kotlin-android` plugin was removed (keep the
   `kotlin-compose` plugin; its version sets the Kotlin version). Versions were picked ≥ ~2 weeks old;
   lint still lists the newest (AGP 9.5.2, BOM 2026.11.01, lifecycle 2.11.1, Robolectric 4.18.1, Gradle 9.9.2).

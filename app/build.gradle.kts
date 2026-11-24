@@ -12,7 +12,10 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "io.github.henriksten65.alarmclock"
-    compileSdk = 37
+    compileSdk {
+        // 37.1: needed by Compose BOM 2026.11.
+        version = release(37) { minorApiLevel = 1 }
+    }
 
     defaultConfig {
         applicationId = "io.github.henriksten65.alarmclock"
