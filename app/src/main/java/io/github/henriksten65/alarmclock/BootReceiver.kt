@@ -1,5 +1,6 @@
 package io.github.henriksten65.alarmclock
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -20,6 +21,8 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     private companion object {
+        // The exact-alarm action is API 31+, but it's only a string we compare; older phones never send it.
+        @SuppressLint("InlinedApi")
         val HANDLED_ACTIONS = setOf(
             // Delivered right after boot, before the user unlocks (we're directBootAware);
             // BOOT_COMPLETED follows after the first unlock.

@@ -18,6 +18,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.app.NotificationChannelCompat
+import androidx.core.net.toUri
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.ServiceCompat
@@ -113,7 +114,7 @@ class AlarmService : Service() {
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
                 // Built into the app, so it plays even right after a reboot before the phone is
                 // unlocked, when the user's audio files and the system default can't be read.
-                Uri.parse("android.resource://$packageName/${R.raw.fallback_alarm}"),
+                "android.resource://$packageName/${R.raw.fallback_alarm}".toUri(),
             ).firstNotNullOfOrNull { createPlayer(it) }
         }
         if (vibrator == null && AppSettings.getInstance(this).vibrate.value) {

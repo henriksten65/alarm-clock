@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import android.provider.Settings
+import androidx.core.net.toUri
 
 /** Helpers for the alarm sound setting. */
 object AlarmSound {
@@ -14,7 +15,7 @@ object AlarmSound {
     /** A human-readable name for the chosen sound; null means the default alarm sound. */
     fun title(context: Context, uriString: String?): String {
         if (uriString == null) return context.getString(R.string.default_alarm_sound)
-        val uri = Uri.parse(uriString)
+        val uri = uriString.toUri()
         return try {
             if (DocumentsContract.isDocumentUri(context, uri)) {
                 context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
