@@ -82,10 +82,10 @@ object TestSupport {
 
     /** The AlarmManager alarm of the timer with [id], if one is set. */
     fun timerAlarm(id: Int): ShadowAlarmManager.ScheduledAlarm? =
-        timerAlarms.singleOrNull { shadowOf(it.operation).savedIntent.getIntExtra(TimerReceiver.EXTRA_TIMER_ID, 0) == id }
+        timerAlarms.singleOrNull { shadowOf(it.pendingIntent).savedIntent.getIntExtra(TimerReceiver.EXTRA_TIMER_ID, 0) == id }
 
     private fun isTimer(alarm: ShadowAlarmManager.ScheduledAlarm) =
-        shadowOf(alarm.operation).savedIntent.action == TimerReceiver.ACTION_DONE
+        shadowOf(alarm.pendingIntent).savedIntent.action == TimerReceiver.ACTION_DONE
 
     /** The alarm clocks currently registered with AlarmManager, by trigger time. */
     fun scheduledTimes(): List<Long> = alarmClocks.map { it.triggerAtMs }.sorted()
@@ -111,3 +111,11 @@ fun describe(millis: Long): String {
         c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), day,
     )
 }
+
+/**
+ * The alarm's PendingIntent. Robolectric 4.18 deprecates the `operation` field but has no
+ * getter to replace it yet, so the warning is silenced here, in one place.
+ */
+@Suppress("DEPRECATION")
+val ShadowAlarmManager.ScheduledAlarm.pendingIntent: android.app.PendingIntent?
+    get() = operation

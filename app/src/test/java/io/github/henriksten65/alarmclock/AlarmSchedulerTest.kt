@@ -90,8 +90,8 @@ class AlarmSchedulerTest {
     @Test
     fun triggerFiresTheAlarmReceiver() {
         AlarmScheduler.schedule(context, add(Alarm(id = 5, hour = 7, minute = 0)))
-        val operation = shadowOf(TestSupport.alarmClocks.single().operation)
-        assertTrue(operation.isBroadcastIntent)
+        val operation = shadowOf(TestSupport.alarmClocks.single().pendingIntent)
+        assertTrue(operation.isBroadcast)
         val intent = operation.savedIntent
         assertEquals(AlarmReceiver.ACTION_FIRE, intent.action)
         assertEquals(AlarmReceiver::class.java.name, intent.component?.className)

@@ -4,8 +4,13 @@ import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldBuffer
+import androidx.compose.foundation.text.input.TextFieldLineLimits
+import androidx.compose.foundation.text.input.placeCursorAtEnd
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -27,14 +32,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.input.TransformedText
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.henriksten65.alarmclock.R
@@ -62,12 +62,11 @@ fun KeyboardTimeDialog(
     }
     // Start with everything selected so the first digit typed replaces the old time.
     // Saveable, so typed digits survive rotating the phone.
-    var field by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(initialDigits, TextRange(0, initialDigits.length)))
-    }
+    val field = rememberTextFieldState(initialDigits, TextRange(0, initialDigits.length))
     var pm by rememberSaveable { mutableStateOf(initialHour >= 12) }
 
-    val result = parseDigits(field.text, is24Hour, pm)
+    val typed = field.text.toString()
+    val result = parseDigits(typed, is24Hour, pm)
     val confirm = { result?.let { (h, m) -> onConfirm(h, m) } }
 
     val focusRequester = remember { FocusRequester() }
@@ -84,22 +83,19 @@ fun KeyboardTimeDialog(
             }
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
-                    value = field,
-                    onValueChange = { new ->
-                        val digits = new.text.filter(Char::isDigit).take(4)
-                        field = new.copy(text = digits, selection = TextRange(digits.length))
-                    },
+                    state = field,
+                    inputTransformation = DigitsOnly,
+                    outputTransformation = TimeDigitsTransformation,
                     textStyle = MaterialTheme.typography.displayMedium.copy(textAlign = TextAlign.Center),
-                    singleLine = true,
-                    isError = field.text.isNotEmpty() && result == null,
+                    lineLimits = TextFieldLineLimits.SingleLine,
+                    isError = typed.isNotEmpty() && result == null,
                     supportingText = {
                         Text(
-                            stringResource(if (field.text.isNotEmpty() && result == null) R.string.invalid_time else R.string.type_time_hint),
+                            stringResource(if (typed.isNotEmpty() && result == null) R.string.invalid_time else R.string.type_time_hint),
                         )
                     },
-                    visualTransformation = TimeDigitsTransformation,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { confirm() }),
+                    onKeyboardAction = { confirm() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
@@ -145,17 +141,18 @@ private fun toDayHour(hour: Int, is24Hour: Boolean, pm: Boolean): Int? = when {
     else -> (hour % 12) + if (pm) 12 else 0
 }
 
+/** Keeps at most 4 digits, with the cursor after them. */
+private object DigitsOnly : InputTransformation {
+    override fun TextFieldBuffer.transformInput() {
+        val digits = toString().filter(Char::isDigit).take(4)
+        if (digits != toString()) replace(0, length, digits)
+        placeCursorAtEnd()
+    }
+}
+
 /** Shows "630" as "6:30" and "1845" as "18:45" while typing; 1–2 digits are shown as-is. */
-private object TimeDigitsTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val raw = text.text
-        if (raw.length < 3) return TransformedText(text, OffsetMapping.Identity)
-        val colonAt = raw.length - 2
-        val shown = raw.substring(0, colonAt) + ":" + raw.substring(colonAt)
-        val mapping = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int) = if (offset <= colonAt) offset else offset + 1
-            override fun transformedToOriginal(offset: Int) = if (offset <= colonAt) offset else offset - 1
-        }
-        return TransformedText(AnnotatedString(shown), mapping)
+private object TimeDigitsTransformation : OutputTransformation {
+    override fun TextFieldBuffer.transformOutput() {
+        if (length >= 3) replace(length - 2, length - 2, ":")
     }
 }

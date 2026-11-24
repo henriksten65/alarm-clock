@@ -63,7 +63,7 @@ class UpcomingAlarmTest {
         assertNull(upcoming())
         val reminder = TestSupport.reminders.single()
         assertEquals(alarm.nextRingMillis() - 2 * 60 * minute, reminder.triggerAtMs)
-        val intent = shadowOf(reminder.operation).savedIntent
+        val intent = shadowOf(reminder.pendingIntent).savedIntent
         assertEquals(AlarmReceiver.ACTION_UPCOMING, intent.action)
         assertEquals(1, intent.getIntExtra(EXTRA_ALARM_ID, -1))
     }

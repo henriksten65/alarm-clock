@@ -72,7 +72,7 @@ class TimerTest {
         assertEquals(TimerStatus.RUNNING, state().status)
         assertEquals("Eggs", state().label)
         val alarm = TestSupport.timerAlarm(id)!!
-        assertEquals(AlarmManager.ELAPSED_REALTIME_WAKEUP, alarm.type)
+        assertEquals(AlarmManager.ELAPSED_REALTIME_WAKEUP, alarm.getType())
         assertEquals(before + 5 * minute, alarm.triggerAtMs)
         // Not an alarm clock: the system's "next alarm" stays the real alarm.
         assertNull(alarm.alarmClockInfo)
