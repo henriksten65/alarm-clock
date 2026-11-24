@@ -18,8 +18,8 @@ android {
         applicationId = "io.github.henriksten65.alarmclock"
         minSdk = 26
         targetSdk = 37
-        versionCode = 18
-        versionName = "3.2"
+        versionCode = 19
+        versionName = "3.3"
     }
 
     base.archivesName = "AlarmClock-${defaultConfig.versionName}"
