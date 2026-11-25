@@ -232,6 +232,10 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   (Scaffold `bottomBar`) or the NavigationRail (first child of a `Row`) is switched; the tab's screen is always
   at the same place. Separate `Row`/`Scaffold` trees gave different `rememberSaveable` keys per orientation, so
   rotating closed open dialogs and rotating back resurrected older state. `RotationTest` guards this.
+- **Easter egg** (user's request, 2026-11-25, after 3.7): a secret 10-digit sequence on the app's keypads (Timer,
+  calculator time dialog; not the phone keyboard or hardware keys) shows a "Greetings, Master!" toast. Stored only
+  as a SHA-256 hash in `ui/Keypad.kt` (`SecretSequence`) because the repo is public; the user knows the digits.
+  Deliberately not in the README.
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)
