@@ -381,7 +381,7 @@ private fun TimerEntry(initialMillis: Long, keypadLayout: KeypadLayout, onStart:
             )
         }
         val display = @Composable {
-            TimerEntryDisplay(digits, dimmed = replaceOnType)
+            TimerEntryDisplay(digits, selected = replaceOnType)
         }
         val start = @Composable {
             Button(
@@ -420,12 +420,11 @@ private fun TimerEntry(initialMillis: Long, keypadLayout: KeypadLayout, onStart:
     }
 }
 
-/** "00h 05m 00s", digits large and units small; dimmed while the next key replaces it. */
+/** "00h 05m 00s", digits large and units small; highlighted like selected text while the next key replaces it. */
 @Composable
-private fun TimerEntryDisplay(digits: String, dimmed: Boolean) {
+private fun TimerEntryDisplay(digits: String, selected: Boolean) {
     val d = digits.padStart(6, '0')
     val units = listOf(stringResource(R.string.hours_unit), stringResource(R.string.minutes_unit), stringResource(R.string.seconds_unit))
-    val color = if (dimmed) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
     val text = buildAnnotatedString {
         for (i in 0..2) {
             if (i > 0) append("  ")
@@ -433,5 +432,5 @@ private fun TimerEntryDisplay(digits: String, dimmed: Boolean) {
             withStyle(SpanStyle(fontSize = MaterialTheme.typography.titleLarge.fontSize)) { append(units[i]) }
         }
     }
-    Text(text, style = MaterialTheme.typography.displayMedium, color = color, maxLines = 1)
+    Text(text, style = MaterialTheme.typography.displayMedium, maxLines = 1, modifier = Modifier.selectedHighlight(selected))
 }

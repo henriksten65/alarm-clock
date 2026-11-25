@@ -1,12 +1,17 @@
 package io.github.henriksten65.alarmclock.ui
 
 import android.os.SystemClock
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.LocalTextSelectionColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
@@ -35,4 +40,15 @@ internal fun rememberElapsedNow(ticking: Boolean, intervalMillis: Long): Long {
         }
     }
     return now
+}
+
+/**
+ * Marks a keypad display whose whole value is pre-selected, i.e. the next key replaces it:
+ * the usual text-selection highlight behind it, as in a text field with all its text selected.
+ */
+@Composable
+internal fun Modifier.selectedHighlight(selected: Boolean): Modifier {
+    val color = LocalTextSelectionColors.current.backgroundColor
+    val shape = RoundedCornerShape(8.dp)
+    return (if (selected) background(color, shape) else this).padding(horizontal = 8.dp)
 }

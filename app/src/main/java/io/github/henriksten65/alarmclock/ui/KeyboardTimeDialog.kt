@@ -143,18 +143,18 @@ fun KeyboardTimeDialog(
             }
             if (ownKeypad) {
                 val display = @Composable {
-                    // Dimmed while the whole time is selected, i.e. the next key replaces it.
+                    // Highlighted like selected text while the whole time is selected, i.e. the next key replaces it.
                     val replacing = !field.selection.collapsed
                     Text(
                         formatTimeDigits(typed),
                         style = if (keypadBeside) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium,
                         color = when {
                             invalid -> MaterialTheme.colorScheme.error
-                            replacing -> MaterialTheme.colorScheme.onSurfaceVariant
                             else -> MaterialTheme.colorScheme.onSurface
                         },
                         maxLines = 1,
                         modifier = Modifier
+                            .selectedHighlight(replacing)
                             .focusRequester(focusRequester)
                             .onPreviewKeyEvent { event -> hardwareKey(event, ::typeKey, ::backspace) { confirm() } }
                             .focusable(),
