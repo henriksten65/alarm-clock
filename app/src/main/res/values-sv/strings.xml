@@ -66,6 +66,10 @@
     <string name="time_entry_keyboard">Tangentbord (skriv siffrorna)</string>
     <string name="enter_time">Ange tid</string>
     <string name="keyboard_24_hour">Inskrivna tider använder 24-timmarsklocka</string>
+    <string name="keypad_layout">Sifferknappar</string>
+    <string name="keypad_phone">Telefon (1 2 3 överst)</string>
+    <string name="keypad_calculator">Miniräknare (7 8 9 överst)</string>
+    <string name="keypad_layout_hint">För timern och inskrivna alarmtider. Miniräknarlayouten visar appens egna knappar när du skriver en alarmtid.</string>
     <string name="type_time_hint">Skriv siffrorna, t.ex. 630 eller 1845</string>
     <string name="invalid_time">Ogiltig tid</string>
     <string name="am">fm</string>

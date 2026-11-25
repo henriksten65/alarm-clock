@@ -68,6 +68,10 @@
     <string name="time_entry_keyboard">Teclado (escribe los dígitos)</string>
     <string name="enter_time">Introducir hora</string>
     <string name="keyboard_24_hour">Horas escritas en formato de 24 horas</string>
+    <string name="keypad_layout">Teclado numérico</string>
+    <string name="keypad_phone">Teléfono (1 2 3 arriba)</string>
+    <string name="keypad_calculator">Calculadora (7 8 9 arriba)</string>
+    <string name="keypad_layout_hint">Para el temporizador y las horas de alarma escritas. El diseño de calculadora muestra el teclado de la app al escribir una hora de alarma.</string>
     <string name="type_time_hint">Escribe los dígitos, p. ej., 630 o 1845</string>
     <string name="invalid_time">Hora no válida</string>
     <string name="am">a. m.</string>

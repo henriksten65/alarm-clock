@@ -14,6 +14,10 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   with an AM/PM switch on 12-hour phones); a new alarm then opens straight on the typed time with the
   keypad showing. The **Typed times use 24-hour clock** switch makes
   typed digits always 24-hour (no AM/PM), whatever the phone's time format
+- Settings → **Number keypad**: **Phone** (1 2 3 on the top row, the default) or **Calculator**
+  (7 8 9 on the top row). It sets the Timer keypad. For typed alarm times, Calculator shows the
+  app's own keypad in the time dialog instead of the phone's keyboard (whose layout an app can't
+  change); a hardware keyboard still works there. In landscape the keypad sits beside the time
 - Settings → **Alarm sound**: one of the phone's alarm sounds (system sound picker) or any audio
   file (document picker; the app keeps read access to it), used by alarms without their own sound.
   Falls back to the default alarm sound if the chosen one can't be played. Read access to files no
@@ -169,7 +173,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 231 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 237 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -177,18 +181,18 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `AlarmScheduleTest` | next ring time: one-time/weekday alarms, month/year end, DST changes, Skip next, snooze |
 | `ui/ParseDigitsTest` | typed time entry ("630" → 6:30, 12/24-hour, invalid input) |
 | `AlarmRepositoryTest` | JSON format incl. version 1 data, ordering, ids never reused, Direct Boot storage + migration |
-| `AppSettingsTest` | defaults, persistence, unknown stored values |
+| `AppSettingsTest` | defaults, persistence, unknown stored values (incl. the keypad layout) |
 | `TimeFormatTest` | card/summary texts, week order per locale, countdowns |
 | `AlarmSchedulerTest` | AlarmManager scheduling, snooze, skip, rescheduling after reboot (missed alarms) / time change |
 | `TimerTest` | timers: add/start/pause/resume/+1 min/reset/delete, labels, independence, their alarms and notifications, ringing, reboots, moving 3.0's timer over |
-| `ui/TimerScreenTest`, `ui/LabelDialogTest` | Alarms/Timer tabs, the keypad with a label, timer cards (Start/Pause/Resume/Reset/delete), adding a second timer, Time's up, the label dialog |
+| `ui/TimerScreenTest`, `ui/LabelDialogTest` | Alarms/Timer tabs, the keypad (phone and calculator order) with a label, timer cards (Start/Pause/Resume/Reset/delete), adding a second timer, Time's up, the label dialog |
 | `StopwatchTest`, `ui/StopwatchScreenTest` | stopwatch: start/pause/resume/lap/reset, notification and its buttons, app restart, reboot and clock change, the Stopwatch tab |
 | `UpcomingAlarmTest` | "Upcoming alarm" notification: reminder two hours before, shown/hidden as alarms change or ring, Dismiss |
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
 | `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm/timer notification, a ring taken over by another |
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
 | `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
-| `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings) |
+| `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings, the calculator keypad in the time dialog) |
 | `TranslationsTest` | every language has every string with the same placeholders and plural forms; all strings format at runtime |
 | `ui/ScreenSizesTest` | landscape, small phone, tablet and large-text layouts, touch-target sizes, screen-reader labels |
 

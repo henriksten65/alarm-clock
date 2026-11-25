@@ -66,6 +66,10 @@
     <string name="time_entry_keyboard">Tastatur (Ziffern eingeben)</string>
     <string name="enter_time">Zeit eingeben</string>
     <string name="keyboard_24_hour">Eingegebene Zeiten im 24-Stunden-Format</string>
+    <string name="keypad_layout">Zifferntasten</string>
+    <string name="keypad_phone">Telefon (1 2 3 oben)</string>
+    <string name="keypad_calculator">Taschenrechner (7 8 9 oben)</string>
+    <string name="keypad_layout_hint">Für den Timer und eingegebene Weckzeiten. Beim Taschenrechner-Layout zeigt die App beim Eingeben einer Weckzeit eigene Tasten.</string>
     <string name="type_time_hint">Ziffern eingeben, z. B. 630 oder 1845</string>
     <string name="invalid_time">Keine gültige Zeit</string>
     <string name="am">AM</string>

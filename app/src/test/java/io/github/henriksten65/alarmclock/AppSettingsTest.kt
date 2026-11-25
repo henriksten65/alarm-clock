@@ -73,6 +73,18 @@ class AppSettingsTest {
     }
 
     @Test
+    fun keypadLayoutDefaultsToPhoneAndIsKept() {
+        assertEquals(KeypadLayout.PHONE, TestSupport.settings.keypadLayout.value)
+        TestSupport.settings.setKeypadLayout(KeypadLayout.CALCULATOR)
+        TestSupport.restartProcess()
+        assertEquals(KeypadLayout.CALCULATOR, TestSupport.settings.keypadLayout.value)
+
+        deviceProtectedPrefs(TestSupport.context, "settings").edit().putString("keypad_layout", "ABACUS").commit()
+        TestSupport.restartProcess()
+        assertEquals(KeypadLayout.PHONE, TestSupport.settings.keypadLayout.value)
+    }
+
+    @Test
     fun defaultsAreAmongTheOfferedOptions() {
         assertTrue(10 in AppSettings.SNOOZE_MINUTE_OPTIONS)
         assertTrue(10 in AppSettings.AUTO_STOP_MINUTE_OPTIONS)

@@ -3,7 +3,10 @@ package io.github.henriksten65.alarmclock.ui
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.OutputTransformation
@@ -11,6 +14,9 @@ import androidx.compose.foundation.text.input.TextFieldBuffer
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.placeCursorAtEnd
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -26,17 +32,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.unit.dp
+import io.github.henriksten65.alarmclock.KeypadLayout
 import io.github.henriksten65.alarmclock.R
 
 /**
@@ -44,12 +63,17 @@ import io.github.henriksten65.alarmclock.R
  * The last two digits are the minutes. On 12-hour devices an AM/PM switch picks the half
  * of the day for hours 1–12; hours 0 and 13–23 are taken as 24-hour times. With [force24Hour]
  * (a user setting) typed digits are always a 24-hour time and there is no AM/PM switch.
+ *
+ * With the [KeypadLayout.CALCULATOR] keypad setting the dialog shows the app's own keypad
+ * (7 8 9 at the top) instead of the phone's keyboard, whose layout can't be changed; a hardware
+ * keyboard still works then.
  */
 @Composable
 fun KeyboardTimeDialog(
     initialHour: Int,
     initialMinute: Int,
     force24Hour: Boolean,
+    keypadLayout: KeypadLayout = KeypadLayout.PHONE,
     onDismiss: () -> Unit,
     onConfirm: (hour: Int, minute: Int) -> Unit,
 ) {
@@ -69,37 +93,44 @@ fun KeyboardTimeDialog(
     val result = parseDigits(typed, is24Hour, pm)
     val confirm = { result?.let { (h, m) -> onConfirm(h, m) } }
 
+    // With the app's keypad the digits are kept in the same state, but shown as plain text
+    // (no text field, so the phone's keyboard stays away); hardware keys still work.
+    val ownKeypad = keypadLayout == KeypadLayout.CALCULATOR
+    fun typeKey(key: String) = field.edit {
+        if (selection.collapsed) append(key) else replace(selection.min, selection.max, key)
+        val digits = toString().take(4)
+        if (digits != toString()) replace(0, length, digits)
+        placeCursorAtEnd()
+    }
+    fun backspace() = field.edit {
+        if (!selection.collapsed) replace(selection.min, selection.max, "")
+        else if (length > 0) replace(length - 1, length, "")
+        placeCursorAtEnd()
+    }
+
+    // In a short window (landscape) the app's keypad goes beside the time and the title is left
+    // out, so nothing needs scrolling.
+    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
+    val keypadBeside = ownKeypad && windowHeight < SHORT_WINDOW_HEIGHT
+
     val focusRequester = remember { FocusRequester() }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.enter_time)) },
+        // Wider than the platform's dialog default, so the time fits next to the keypad.
+        properties = DialogProperties(usePlatformDefaultWidth = !keypadBeside),
+        modifier = if (keypadBeside) Modifier.padding(horizontal = 24.dp).widthIn(max = 520.dp) else Modifier,
+        title = if (keypadBeside) null else { { Text(stringResource(R.string.enter_time)) } },
         text = {
             // In the dialog's own composition (its window), so the text field below is already
             // attached when focus is requested; from outside the dialog that isn't guaranteed.
             val keyboard = LocalSoftwareKeyboardController.current
             LaunchedEffect(Unit) {
                 focusRequester.requestFocus()
-                keyboard?.show()
+                if (ownKeypad) keyboard?.hide() else keyboard?.show()
             }
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                OutlinedTextField(
-                    state = field,
-                    inputTransformation = DigitsOnly,
-                    outputTransformation = TimeDigitsTransformation,
-                    textStyle = MaterialTheme.typography.displayMedium.copy(textAlign = TextAlign.Center),
-                    lineLimits = TextFieldLineLimits.SingleLine,
-                    isError = typed.isNotEmpty() && result == null,
-                    supportingText = {
-                        Text(
-                            stringResource(if (typed.isNotEmpty() && result == null) R.string.invalid_time else R.string.type_time_hint),
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
-                    onKeyboardAction = { confirm() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester),
-                )
+            val invalid = typed.isNotEmpty() && result == null
+            val hint = stringResource(if (invalid) R.string.invalid_time else R.string.type_time_hint)
+            val amPm = @Composable {
                 if (!is24Hour) {
                     SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                         listOf(false to R.string.am, true to R.string.pm).forEachIndexed { index, (isPm, labelRes) ->
@@ -112,6 +143,78 @@ fun KeyboardTimeDialog(
                     }
                 }
             }
+            if (ownKeypad) {
+                val display = @Composable {
+                    // Dimmed while the whole time is selected, i.e. the next key replaces it.
+                    val replacing = !field.selection.collapsed
+                    Text(
+                        formatTimeDigits(typed),
+                        style = if (keypadBeside) MaterialTheme.typography.displaySmall else MaterialTheme.typography.displayMedium,
+                        color = when {
+                            invalid -> MaterialTheme.colorScheme.error
+                            replacing -> MaterialTheme.colorScheme.onSurfaceVariant
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
+                        maxLines = 1,
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
+                            .onPreviewKeyEvent { event -> hardwareKey(event, ::typeKey, ::backspace) { confirm() } }
+                            .focusable(),
+                    )
+                    Text(
+                        hint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (invalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                    )
+                    amPm()
+                }
+                val keypad = @Composable { keySize: Dp ->
+                    Keypad(keySize, keypadLayout, ::typeKey, ::backspace, spacing = 12.dp, keyColor = MaterialTheme.colorScheme.secondaryContainer)
+                }
+                if (keypadBeside) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.weight(1f),
+                        ) { display() }
+                        keypad(48.dp)
+                    }
+                } else {
+                    // Scrolls when it still doesn't fit (large text).
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                    ) {
+                        display()
+                        keypad(56.dp)
+                    }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OutlinedTextField(
+                        state = field,
+                        inputTransformation = DigitsOnly,
+                        outputTransformation = TimeDigitsTransformation,
+                        textStyle = MaterialTheme.typography.displayMedium.copy(textAlign = TextAlign.Center),
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        isError = invalid,
+                        supportingText = { Text(hint) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword, imeAction = ImeAction.Done),
+                        onKeyboardAction = { confirm() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .focusRequester(focusRequester),
+                    )
+                    amPm()
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = { confirm() }, enabled = result != null) { Text(stringResource(R.string.ok)) }
@@ -120,6 +223,24 @@ fun KeyboardTimeDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+/** "630" → "6:30", "1845" → "18:45"; 1–2 digits as they are (like [TimeDigitsTransformation]). */
+internal fun formatTimeDigits(digits: String): String =
+    if (digits.length >= 3) digits.dropLast(2) + ":" + digits.takeLast(2) else digits
+
+/** Digits, Backspace and Enter from a hardware keyboard, for the time display next to the app's keypad. */
+private fun hardwareKey(event: KeyEvent, onDigit: (String) -> Unit, onBackspace: () -> Unit, onEnter: () -> Unit): Boolean {
+    val char = event.utf16CodePoint.toChar()
+    val handled = char.isDigit() || event.key == Key.Backspace || event.key == Key.Enter || event.key == Key.NumPadEnter
+    if (handled && event.type == KeyEventType.KeyDown) {
+        when {
+            char.isDigit() -> onDigit(char.toString())
+            event.key == Key.Backspace -> onBackspace()
+            else -> onEnter()
+        }
+    }
+    return handled
 }
 
 /** Turns up to 4 typed digits into (hour 0–23, minute), or null if they aren't a valid time. */

@@ -15,6 +15,15 @@ enum class TimeEntryMode {
     KEYBOARD,
 }
 
+/** Order of the digit rows on the app's number keypads (Timer, typed alarm times). */
+enum class KeypadLayout {
+    /** Like a phone: 1 2 3 on the top row. */
+    PHONE,
+
+    /** Like a calculator: 7 8 9 on the top row. */
+    CALCULATOR,
+}
+
 /** Light or dark colours for the app's screens. */
 enum class ThemeMode {
     /** Follow the phone's dark theme setting. */
@@ -85,6 +94,19 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putBoolean(KEY_VIBRATE, enabled) }
     }
 
+    /** Phone (1 2 3 at the top) or calculator (7 8 9 at the top) order for the number keypads. */
+    private val _keypadLayout = MutableStateFlow(
+        prefs.getString(KEY_KEYPAD_LAYOUT, null)
+            ?.let { name -> KeypadLayout.entries.firstOrNull { it.name == name } }
+            ?: KeypadLayout.PHONE,
+    )
+    val keypadLayout: StateFlow<KeypadLayout> = _keypadLayout.asStateFlow()
+
+    fun setKeypadLayout(layout: KeypadLayout) {
+        _keypadLayout.value = layout
+        prefs.edit { putString(KEY_KEYPAD_LAYOUT, layout.name) }
+    }
+
     /** Whether the app uses light or dark colours, or follows the phone. */
     private val _themeMode = MutableStateFlow(
         prefs.getString(KEY_THEME_MODE, null)
@@ -112,6 +134,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_AUTO_STOP_MINUTES = "auto_stop_minutes"
         private const val KEY_VIBRATE = "vibrate"
         private const val KEY_THEME_MODE = "theme_mode"
+        private const val KEY_KEYPAD_LAYOUT = "keypad_layout"
 
         @Volatile
         private var instance: AppSettings? = null

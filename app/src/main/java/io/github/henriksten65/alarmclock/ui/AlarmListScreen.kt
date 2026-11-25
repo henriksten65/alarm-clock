@@ -101,6 +101,7 @@ import io.github.henriksten65.alarmclock.AlarmScheduler
 import io.github.henriksten65.alarmclock.AlarmService
 import io.github.henriksten65.alarmclock.AlarmSound
 import io.github.henriksten65.alarmclock.AppSettings
+import io.github.henriksten65.alarmclock.KeypadLayout
 import io.github.henriksten65.alarmclock.R
 import io.github.henriksten65.alarmclock.ThemeMode
 import io.github.henriksten65.alarmclock.Timer
@@ -138,6 +139,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
     val alarms by repository.alarms.collectAsStateWithLifecycle()
     val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
     val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
+    val keypadLayout by settings.keypadLayout.collectAsStateWithLifecycle()
     val defaultSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
     // Saveable, so an open dialog (and what was changed in it) survives rotating the phone.
     var editing by rememberSaveable(stateSaver = AlarmSaver) { mutableStateOf<Alarm?>(null) }
@@ -362,6 +364,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
             isNew = repository.get(alarm.id) == null,
             timeEntryMode = timeEntryMode,
             keyboard24Hour = keyboard24Hour,
+            keypadLayout = keypadLayout,
             defaultSoundUri = defaultSoundUri,
             onDismiss = { editing = null },
             onSave = {
@@ -400,6 +403,7 @@ private fun SettingsDialog(
     val autoStopMinutes by settings.autoStopMinutes.collectAsStateWithLifecycle()
     val vibrate by settings.vibrate.collectAsStateWithLifecycle()
     val themeMode by settings.themeMode.collectAsStateWithLifecycle()
+    val keypadLayout by settings.keypadLayout.collectAsStateWithLifecycle()
 
     // One of the phone's alarm sounds, via the system sound picker.
     val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -468,6 +472,42 @@ private fun SettingsDialog(
                     Switch(checked = keyboard24Hour, onCheckedChange = null, enabled = keyboardMode)
                 }
               }
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                Column(Modifier.selectableGroup()) {
+                    Text(
+                        stringResource(R.string.keypad_layout),
+                        style = MaterialTheme.typography.titleSmall,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    listOf(
+                        KeypadLayout.PHONE to R.string.keypad_phone,
+                        KeypadLayout.CALCULATOR to R.string.keypad_calculator,
+                    ).forEach { (layout, labelRes) ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp)
+                                .selectable(
+                                    selected = layout == keypadLayout,
+                                    role = Role.RadioButton,
+                                    onClick = { settings.setKeypadLayout(layout) },
+                                ),
+                        ) {
+                            RadioButton(selected = layout == keypadLayout, onClick = null)
+                            Spacer(Modifier.width(12.dp))
+                            Text(stringResource(labelRes))
+                        }
+                    }
+                    Text(
+                        stringResource(R.string.keypad_layout_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
@@ -721,6 +761,7 @@ private fun EditAlarmDialog(
     isNew: Boolean,
     timeEntryMode: TimeEntryMode,
     keyboard24Hour: Boolean,
+    keypadLayout: KeypadLayout,
     defaultSoundUri: String?,
     onDismiss: () -> Unit,
     onSave: (Alarm) -> Unit,
@@ -789,7 +830,7 @@ private fun EditAlarmDialog(
         }
         when (timeEntryMode) {
             TimeEntryMode.DIAL -> TimePickerDialog(hour, minute, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
-            TimeEntryMode.KEYBOARD -> KeyboardTimeDialog(hour, minute, keyboard24Hour, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
+            TimeEntryMode.KEYBOARD -> KeyboardTimeDialog(hour, minute, keyboard24Hour, keypadLayout, onDismiss = { pickingTime = false }, onConfirm = onConfirm)
         }
     }
 }

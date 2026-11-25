@@ -78,6 +78,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.henriksten65.alarmclock.AlarmScheduler
 import io.github.henriksten65.alarmclock.AlarmService
+import io.github.henriksten65.alarmclock.AppSettings
+import io.github.henriksten65.alarmclock.KeypadLayout
 import io.github.henriksten65.alarmclock.R
 import io.github.henriksten65.alarmclock.Timer
 import io.github.henriksten65.alarmclock.TimerState
@@ -106,6 +108,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val timers by Timer.timers(context).collectAsStateWithLifecycle()
     val lastDuration by Timer.lastDuration(context).collectAsStateWithLifecycle()
+    val keypadLayout by AppSettings.getInstance(context).keypadLayout.collectAsStateWithLifecycle()
     val ringingTimerId = Timer.timerIdOf(AlarmService.ringingAlarmId.collectAsStateWithLifecycle().value)
 
     // The keypad for a new timer: on its own when there are no timers, otherwise after "Add timer".
@@ -158,6 +161,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
             if (showEntry) {
                 TimerEntry(
                     initialMillis = lastDuration,
+                    keypadLayout = keypadLayout,
                     onStart = { millis, label ->
                         Timer.add(context, millis, label)
                         adding = false
@@ -359,7 +363,7 @@ internal fun LabelDialog(initial: String, onDismiss: () -> Unit, onConfirm: (Str
 }
 
 @Composable
-private fun TimerEntry(initialMillis: Long, onStart: (millis: Long, label: String) -> Unit) {
+private fun TimerEntry(initialMillis: Long, keypadLayout: KeypadLayout, onStart: (millis: Long, label: String) -> Unit) {
     // Shows the last time used; typing replaces it (like the typed alarm time).
     var digits by rememberSaveable { mutableStateOf(millisToTimerDigits(initialMillis)) }
     var replaceOnType by rememberSaveable { mutableStateOf(true) }
@@ -400,7 +404,7 @@ private fun TimerEntry(initialMillis: Long, onStart: (millis: Long, label: Strin
                 modifier = Modifier.widthIn(min = 200.dp).height(56.dp),
             ) { Text(stringResource(R.string.start), style = MaterialTheme.typography.titleMedium) }
         }
-        val keypad = @Composable { Keypad(keySize, ::type, ::backspace) }
+        val keypad = @Composable { Keypad(keySize, keypadLayout, ::type, ::backspace) }
         if (wide) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -444,30 +448,4 @@ private fun TimerEntryDisplay(digits: String, dimmed: Boolean) {
         }
     }
     Text(text, style = MaterialTheme.typography.displayMedium, color = color, maxLines = 1)
-}
-
-@Composable
-private fun Keypad(keySize: Dp, onDigit: (String) -> Unit, onBackspace: () -> Unit) {
-    val deleteDescription = stringResource(R.string.delete_digit)
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"), listOf("00", "0", "⌫")).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                row.forEach { key ->
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .size(keySize)
-                            .clip(CircleShape)
-                            .clickable(role = Role.Button) { if (key == "⌫") onBackspace() else onDigit(key) }
-                            .then(if (key == "⌫") Modifier.semantics { contentDescription = deleteDescription } else Modifier),
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Text(key, style = MaterialTheme.typography.headlineSmall)
-                        }
-                    }
-                }
-            }
-        }
-    }
 }

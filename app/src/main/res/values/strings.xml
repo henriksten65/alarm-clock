@@ -65,6 +65,10 @@
     <string name="time_entry_keyboard">Keyboard (type the digits)</string>
     <string name="enter_time">Enter time</string>
     <string name="keyboard_24_hour">Typed times use 24-hour clock</string>
+    <string name="keypad_layout">Number keypad</string>
+    <string name="keypad_phone">Phone (1 2 3 at the top)</string>
+    <string name="keypad_calculator">Calculator (7 8 9 at the top)</string>
+    <string name="keypad_layout_hint">For the timer and typed alarm times. The calculator layout shows the app\'s own keypad when you type an alarm time.</string>
     <string name="type_time_hint">Type the digits, e.g. 630 or 1845</string>
     <string name="invalid_time">Not a valid time</string>
     <string name="am">AM</string>

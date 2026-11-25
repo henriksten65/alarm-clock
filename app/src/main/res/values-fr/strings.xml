@@ -68,6 +68,10 @@
     <string name="time_entry_keyboard">Clavier (tapez les chiffres)</string>
     <string name="enter_time">Saisir l\'heure</string>
     <string name="keyboard_24_hour">Heures saisies au format 24 h</string>
+    <string name="keypad_layout">Pavé numérique</string>
+    <string name="keypad_phone">Téléphone (1 2 3 en haut)</string>
+    <string name="keypad_calculator">Calculatrice (7 8 9 en haut)</string>
+    <string name="keypad_layout_hint">Pour le minuteur et les heures d\'alarme saisies. La disposition calculatrice affiche le pavé de l\'appli quand vous saisissez une heure d\'alarme.</string>
     <string name="type_time_hint">Tapez les chiffres, p. ex. 630 ou 1845</string>
     <string name="invalid_time">Heure non valide</string>
     <string name="am">AM</string>

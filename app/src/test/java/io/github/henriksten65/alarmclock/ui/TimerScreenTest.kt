@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import io.github.henriksten65.alarmclock.KeypadLayout
 import io.github.henriksten65.alarmclock.PHONE_SCREEN
 import io.github.henriksten65.alarmclock.TestSupport
 import io.github.henriksten65.alarmclock.Timer
@@ -82,6 +84,27 @@ class TimerScreenTest {
         compose.onNodeWithText("00h  00m  13s").assertExists()
         tap("00")
         compose.onNodeWithText("00h  13m  00s").assertExists()
+    }
+
+    @Test
+    fun calculatorLayoutPuts789OnTop() {
+        val top = { key: String -> compose.onNodeWithText(key).getBoundsInRoot().top }
+        TestSupport.settings.setKeypadLayout(KeypadLayout.CALCULATOR)
+        showTimer()
+        assertTrue(top("7") < top("4"))
+        assertTrue(top("4") < top("1"))
+        assertTrue(top("1") < top("0"))
+        tap("9"); tap("0")
+        compose.onNodeWithText("00h  00m  90s").assertExists()
+    }
+
+    @Test
+    fun phoneLayoutPuts123OnTop() {
+        val top = { key: String -> compose.onNodeWithText(key).getBoundsInRoot().top }
+        showTimer()
+        assertTrue(top("1") < top("4"))
+        assertTrue(top("4") < top("7"))
+        assertTrue(top("7") < top("0"))
     }
 
     @Test
