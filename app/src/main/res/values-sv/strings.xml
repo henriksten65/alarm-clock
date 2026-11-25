@@ -85,6 +85,9 @@
     <string name="alarm_list">Larmlistan</string>
     <string name="show_skip_next">Visa ”Hoppa över nästa”</string>
     <string name="show_skip_next_hint">En knapp på upprepade larm som hoppar över bara nästa ringning.</string>
+    <string name="play_sound">Spela upp ljudet</string>
+    <string name="stop_sound">Stoppa ljudet</string>
+    <string name="cant_play_sound">Ljudet kan inte spelas upp</string>
     <string name="appearance">Utseende</string>
     <string name="theme_system">Samma som telefonen</string>
     <string name="theme_light">Ljust</string>

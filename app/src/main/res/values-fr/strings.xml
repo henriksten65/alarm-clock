@@ -87,6 +87,9 @@
     <string name="alarm_list">Liste des alarmes</string>
     <string name="show_skip_next">Afficher « Ignorer la prochaine »</string>
     <string name="show_skip_next_hint">Un bouton sur les alarmes répétées qui ignore seulement leur prochaine sonnerie.</string>
+    <string name="play_sound">Écouter le son</string>
+    <string name="stop_sound">Arrêter le son</string>
+    <string name="cant_play_sound">Impossible de lire ce son</string>
     <string name="appearance">Apparence</string>
     <string name="theme_system">Comme le téléphone</string>
     <string name="theme_light">Clair</string>

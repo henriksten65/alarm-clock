@@ -431,7 +431,10 @@ private fun SettingsDialog(
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
                 SettingsTitle(R.string.alarm_sound)
-                Text(soundTitle, style = MaterialTheme.typography.bodyLarge)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(soundTitle, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                    SoundPreviewButton(alarmSoundUri)
+                }
                 // Wraps onto two lines when both buttons don't fit (narrow screens, large text).
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
                     OutlinedButton(onClick = { pickers.phoneSound(AlarmSound.pickerIntent(context, alarmSoundUri)) }) {
@@ -828,6 +831,8 @@ private fun AlarmSoundChooser(soundUri: String?, defaultSoundUri: String?, onCha
         Text(stringResource(R.string.sound), style = MaterialTheme.typography.titleSmall)
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            // Plays the sound this alarm will ring with: its own, or the one from the settings.
+            SoundPreviewButton(soundUri ?: defaultSoundUri)
             Box {
                 TextButton(onClick = { menuOpen = true }) { Text(stringResource(R.string.change)) }
                 DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {

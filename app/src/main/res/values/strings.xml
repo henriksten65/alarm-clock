@@ -84,6 +84,9 @@
     <string name="alarm_list">Alarm list</string>
     <string name="show_skip_next">Show “Skip next”</string>
     <string name="show_skip_next_hint">A button on repeating alarms that skips just their next ring.</string>
+    <string name="play_sound">Play sound</string>
+    <string name="stop_sound">Stop sound</string>
+    <string name="cant_play_sound">Can\'t play this sound</string>
     <string name="appearance">Appearance</string>
     <string name="theme_system">Same as phone</string>
     <string name="theme_light">Light</string>

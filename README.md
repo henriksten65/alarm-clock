@@ -21,7 +21,9 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
 - Settings → **Alarm sound**: one of the phone's alarm sounds (system sound picker) or any audio
   file (document picker; the app keeps read access to it), used by alarms without their own sound.
   Falls back to the default alarm sound if the chosen one can't be played. Read access to files no
-  alarm uses any more is given back when the app starts
+  alarm uses any more is given back when the app starts. A ▶/■ button next to the sound (here and
+  in the alarm's edit dialog) plays it on the alarm volume for up to 15 s; it stops when the sound
+  changes, the dialog closes or the app leaves the screen, and says so if the sound can't be played
 - Settings → **Ringing**: snooze length and "Stop ringing after" (1, 5, 10, 15, 20 or 30 min;
   default 10) and **Vibrate** on/off
 - Settings → **Appearance**: light or dark colours, or **Same as phone** (default)
@@ -138,7 +140,7 @@ app/src/main/java/io/github/henriksten65/alarmclock/
   Alarm.kt            data class + next-trigger calculation + JSON (de)serialisation
   AlarmRepository.kt  SharedPreferences storage, exposes alarms as a StateFlow
   AppSettings.kt      user settings (time entry, 24-hour typing, alarm sound, snooze, auto-stop, vibrate, theme), SharedPreferences + StateFlow
-  AlarmSound.kt       alarm sound picker intent, display name, persisting file access
+  AlarmSound.kt       alarm sound picker intent, display name, persisting file access, audio attributes
   AlarmHealth.kt      checks for settings that would silence/hide alarms (+ intents to fix them)
   Storage.kt          device-protected SharedPreferences (Direct Boot) + migration
   AlarmScheduler.kt   AlarmManager scheduling, cancel, snooze, stop ringing

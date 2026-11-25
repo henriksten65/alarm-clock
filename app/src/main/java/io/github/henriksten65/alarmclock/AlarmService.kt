@@ -43,10 +43,7 @@ class AlarmService : Service() {
         stopSelf()
     }
 
-    private val alarmAudioAttributes: AudioAttributes = AudioAttributes.Builder()
-        .setUsage(AudioAttributes.USAGE_ALARM)
-        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-        .build()
+    private val alarmAudioAttributes: AudioAttributes = AlarmSound.audioAttributes
 
     override fun onBind(intent: Intent?): IBinder? = null
 

@@ -2,6 +2,7 @@ package io.github.henriksten65.alarmclock
 
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.RingtoneManager
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -11,6 +12,12 @@ import androidx.core.net.toUri
 
 /** Helpers for the alarm sound setting. */
 object AlarmSound {
+
+    /** Alarm sounds play on the alarm volume (also the sound previews in the app). */
+    val audioAttributes: AudioAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ALARM)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+        .build()
 
     /** A human-readable name for the chosen sound; null means the default alarm sound. */
     fun title(context: Context, uriString: String?): String {

@@ -87,6 +87,9 @@
     <string name="alarm_list">Lista de alarmes</string>
     <string name="show_skip_next">Mostrar “Pular o próximo”</string>
     <string name="show_skip_next_hint">Um botão nos alarmes repetidos que pula só o próximo toque.</string>
+    <string name="play_sound">Tocar som</string>
+    <string name="stop_sound">Parar som</string>
+    <string name="cant_play_sound">Não é possível tocar este som</string>
     <string name="appearance">Aparência</string>
     <string name="theme_system">Igual ao telefone</string>
     <string name="theme_light">Claro</string>
