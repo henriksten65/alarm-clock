@@ -37,14 +37,18 @@ internal fun keypadRows(layout: KeypadLayout): List<List<String>> {
     return ordered + listOf(listOf("00", "0", BACKSPACE_KEY))
 }
 
-/** SHA-256 of the secret key sequence (stored only as a hash, since the source is public). */
-private const val SECRET_SHA256 = "039a69ffeaee2a305c70865c29f48ae115aa2d5a7f1b4d207f7edea51a9fc0b9"
+/** SHA-256 of each secret key sequence (stored only as hashes, since the source is public). */
+private val SECRET_SHA256S = setOf(
+    "039a69ffeaee2a305c70865c29f48ae115aa2d5a7f1b4d207f7edea51a9fc0b9",
+    "b3584771a1d97fd901eff1a186a1f08d1c75bf3490fef8559710d49d140d5442",
+    "41e4468bb70f1cb41858810dcf7c69705ec1fb235e90972466ba2863ace2b388",
+)
 private const val SECRET_LENGTH = 10
 internal const val SECRET_MESSAGE = "Greetings, Master!"
 
 /**
  * The last digits pressed on a keypad, for a small easter egg: [press] returns true when they
- * match the secret. "00" counts as two zeros; backspace starts over.
+ * match one of the secrets. "00" counts as two zeros; backspace starts over.
  */
 internal class SecretSequence {
     private var recent = ""
@@ -55,7 +59,7 @@ internal class SecretSequence {
             return false
         }
         recent = (recent + key).takeLast(SECRET_LENGTH)
-        return recent.length == SECRET_LENGTH && sha256(recent) == SECRET_SHA256
+        return recent.length == SECRET_LENGTH && sha256(recent) in SECRET_SHA256S
     }
 
     private fun sha256(text: String): String =

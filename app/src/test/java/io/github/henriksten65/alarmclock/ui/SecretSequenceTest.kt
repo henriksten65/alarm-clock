@@ -39,6 +39,20 @@ class SecretSequenceTest {
     }
 
     @Test
+    fun theOtherTwoSequencesWorkToo() {
+        for (code in listOf("9012272978", "9312300917")) {
+            val results = SecretSequence().pressAll(code.map { it.toString() })
+            assertTrue(code, results.last())
+            assertFalse(code, results.dropLast(1).any { it })
+        }
+    }
+
+    @Test
+    fun sequencesDontMixAndMatch() {
+        assertFalse(SecretSequence().pressAll("9012300917".map { it.toString() }).last())
+    }
+
+    @Test
     fun theOldNumberNoLongerWorks() {
         assertFalse(SecretSequence().pressAll("3551318098".map { it.toString() }).last())
     }
