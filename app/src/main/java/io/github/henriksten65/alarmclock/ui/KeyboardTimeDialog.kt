@@ -2,6 +2,7 @@ package io.github.henriksten65.alarmclock.ui
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -166,8 +167,13 @@ fun KeyboardTimeDialog(
                     )
                     amPm()
                 }
+                // The same key size as on the Timer tab, smaller only when the dialog is too narrow for it.
                 val keypad = @Composable { keySize: Dp ->
-                    Keypad(keySize, keypadLayout, ::typeKey, ::backspace, spacing = 12.dp, keyColor = MaterialTheme.colorScheme.secondaryContainer)
+                    BoxWithConstraints(contentAlignment = Alignment.Center) {
+                        val spacing = 16.dp
+                        val fitting = ((maxWidth - spacing * 2) / 3).coerceAtMost(keySize)
+                        Keypad(fitting, keypadLayout, ::typeKey, ::backspace, spacing = spacing, keyColor = MaterialTheme.colorScheme.secondaryContainer)
+                    }
                 }
                 if (keypadBeside) {
                     Row(
@@ -180,7 +186,7 @@ fun KeyboardTimeDialog(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.weight(1f),
                         ) { display() }
-                        keypad(48.dp)
+                        keypad(48.dp) // Any bigger and the bottom row is cut off in a phone in landscape.
                     }
                 } else {
                     // Scrolls when it still doesn't fit (large text).
@@ -190,7 +196,7 @@ fun KeyboardTimeDialog(
                         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                     ) {
                         display()
-                        keypad(56.dp)
+                        keypad(72.dp)
                     }
                 }
             } else {
