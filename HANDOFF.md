@@ -42,6 +42,11 @@ asks for features one at a time, tests them in the emulator, and then says
   portrait; 48 dp beside the time in short windows, or the bottom row is cut off). Plus a refactor with no behaviour
   change: shared helpers in `Notifications.kt` and `ui/Layout.kt`, Settings dialog pieces (`RadioOptions`,
   `SwitchRow`, `rememberSoundPickers`); 246 tests.
+- **Version 3.10** (`versionCode 26`), tagged `v3.10`: pre-selected keypad digits (typed-time dialog, Timer entry) shown
+  with the text-selection highlight instead of dimmed (`Modifier.selectedHighlight` in `ui/Layout.kt`); Settings →
+  Alarm list → Show "Skip next" (`AppSettings.showSkipNext`, on by default; a skip already set still shows with
+  Don't skip); ▶/■ sound preview (`ui/SoundPreview.kt`, alarm volume, max 15 s, `AlarmSound.audioAttributes`);
+  settings gear on all tabs (shared `SettingsButton`); 254 tests.
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.9` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
@@ -69,6 +74,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v3.4` | **Maintenance**: lint warnings fixed (toUri, mipmap-anydpi, InlinedApi note); Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1. Compose BOM kept (2026.11.01 needs compileSdk 37.1) |
   | `v3.5` | **Compose upgrade**: Compose BOM 2026.11.01, compileSdk 37.1 (`android-37.1` installed by the user); lint shows no warnings |
   | `v3.6` | **Stopwatch tab**: one stopwatch with Start/Lap/Pause/Resume/Reset, hundredths, laps (lap time + total, newest first), count-up notification with buttons; survives updates, clock changes and reboots |
+  | `v3.10` | Selection highlight on pre-filled keypad digits; "Skip next" can be hidden; sound preview ▶/■; settings gear on the Timer and Stopwatch tabs |
   | `v3.9` | Bigger keys in the typed-time dialog (same as the Timer's); duplicated code consolidated (`Notifications.kt`, `ui/Layout.kt`) |
   | `v3.8` | Keypad easter egg (secret; not in the release notes or README) |
   | `v3.7` | **Number keypad** setting (calculator layout by default, app keypad in the typed-time dialog); rotating keeps open dialogs and typed text |
