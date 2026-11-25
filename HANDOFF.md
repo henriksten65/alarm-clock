@@ -36,7 +36,7 @@ asks for features one at a time, tests them in the emulator, and then says
   Timer keypad follows it; with Calculator the typed-time dialog shows the app keypad instead of the IME (read-only
   display + hardware keys via `onPreviewKeyEvent`; in windows < 480 dp high the keypad sits beside the time, no title,
   platform width off, max 520 dp). Plus the rotation fix (dialogs/typed text kept, see §5); 239 tests.
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.6` (latest); see §3 for how they're made.
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.7` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
