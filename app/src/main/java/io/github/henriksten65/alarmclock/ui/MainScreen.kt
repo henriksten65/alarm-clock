@@ -1,6 +1,5 @@
 package io.github.henriksten65.alarmclock.ui
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -43,9 +42,8 @@ fun MainScreen(
     tab: Tab,
     onTabChange: (Tab) -> Unit,
 ) {
-    // Back on the Timer or Stopwatch tab goes to the alarms, the app's start screen.
-    BackHandler(enabled = tab != Tab.ALARMS) { onTabChange(Tab.ALARMS) }
-
+    // All tabs are equal: Back leaves the app from any of them (a screen's own Back, e.g. closing
+    // the new-timer keypad, still comes first).
     val content = @Composable { modifier: Modifier ->
         when (tab) {
             Tab.ALARMS -> AlarmListScreen(repository, settings, modifier)
