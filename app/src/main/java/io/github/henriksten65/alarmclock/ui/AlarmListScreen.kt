@@ -80,10 +80,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -108,6 +107,7 @@ import io.github.henriksten65.alarmclock.Timer
 import io.github.henriksten65.alarmclock.TimeEntryMode
 import io.github.henriksten65.alarmclock.dayAndTimeText
 import io.github.henriksten65.alarmclock.formatTime
+import io.github.henriksten65.alarmclock.joinNonBlank
 import io.github.henriksten65.alarmclock.timeUntilShortText
 import io.github.henriksten65.alarmclock.repeatText
 import io.github.henriksten65.alarmclock.timeUntilText
@@ -118,12 +118,6 @@ import kotlinx.coroutines.withTimeoutOrNull
 import org.json.JSONObject
 
 private const val UNDO_TIMEOUT_MILLIS = 15_000L
-
-/** The alarm list and the warning banners don't get wider than this (tablets, landscape). */
-internal val MAX_CONTENT_WIDTH = 640.dp
-
-/** Below this window height (e.g. a phone in landscape) "Add alarm" moves from the floating button into the top bar. */
-internal val SHORT_WINDOW_HEIGHT = 480.dp
 
 /** Keeps the alarm being edited across rotation and other configuration changes. */
 internal val AlarmSaver = Saver<Alarm?, String>(
@@ -198,6 +192,9 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
         if (ringingAlarmId == alarmId) AlarmScheduler.stopRinging(context)
     }
 
+    fun toastNextRing(alarm: Alarm) =
+        Toast.makeText(context, timeUntilText(context, alarm.nextRingMillis()), Toast.LENGTH_SHORT).show()
+
     fun enableAndSchedule(alarm: Alarm) {
         val enabled = alarm.copy(enabled = true, snoozedUntil = 0L)
         repository.upsert(enabled)
@@ -218,8 +215,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
         )
     }
 
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
+    val shortWindow = isShortWindow()
 
     Scaffold(
         modifier = modifier,
@@ -317,16 +313,8 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
                                 }
                             },
                             onCancelSnooze = { AlarmScheduler.cancelSnooze(context, alarm.id) },
-                            onSkipNext = {
-                                AlarmScheduler.skipNext(context, alarm.id)?.let {
-                                    Toast.makeText(context, timeUntilText(context, it.nextRingMillis()), Toast.LENGTH_SHORT).show()
-                                }
-                            },
-                            onCancelSkip = {
-                                AlarmScheduler.cancelSkip(context, alarm.id)?.let {
-                                    Toast.makeText(context, timeUntilText(context, it.nextRingMillis()), Toast.LENGTH_SHORT).show()
-                                }
-                            },
+                            onSkipNext = { AlarmScheduler.skipNext(context, alarm.id)?.let(::toastNextRing) },
+                            onCancelSkip = { AlarmScheduler.cancelSkip(context, alarm.id)?.let(::toastNextRing) },
                             onDelete = {
                                 AlarmScheduler.cancel(context, alarm.id)
                                 repository.delete(alarm.id)
@@ -405,191 +393,162 @@ private fun SettingsDialog(
     val themeMode by settings.themeMode.collectAsStateWithLifecycle()
     val keypadLayout by settings.keypadLayout.collectAsStateWithLifecycle()
 
-    // One of the phone's alarm sounds, via the system sound picker.
-    val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val data = result.data ?: return@rememberLauncherForActivityResult
-        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
-        val uri = IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
-        AlarmSound.choose(context, settings, uri)
-    }
-    // Any audio file on the phone, via the document picker.
-    val pickAudioFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) AlarmSound.choose(context, settings, uri)
-    }
+    val pickers = rememberSoundPickers { AlarmSound.choose(context, settings, it) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.settings)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-              Column(Modifier.selectableGroup()) {
-                Text(
-                    stringResource(R.string.time_entry),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                SettingsTitle(R.string.time_entry)
+                RadioOptions(
+                    listOf(TimeEntryMode.DIAL to R.string.time_entry_dial, TimeEntryMode.KEYBOARD to R.string.time_entry_keyboard),
+                    selected = timeEntryMode,
+                    onSelect = onTimeEntryModeChange,
                 )
-                listOf(
-                    TimeEntryMode.DIAL to R.string.time_entry_dial,
-                    TimeEntryMode.KEYBOARD to R.string.time_entry_keyboard,
-                ).forEach { (mode, labelRes) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp)
-                            .selectable(
-                                selected = mode == timeEntryMode,
-                                role = Role.RadioButton,
-                                onClick = { onTimeEntryModeChange(mode) },
-                            ),
-                    ) {
-                        RadioButton(selected = mode == timeEntryMode, onClick = null)
-                        Spacer(Modifier.width(12.dp))
-                        Text(stringResource(labelRes))
-                    }
-                }
                 // Only meaningful for typed times, so it's greyed out while the dial is chosen.
-                val keyboardMode = timeEntryMode == TimeEntryMode.KEYBOARD
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .padding(start = 36.dp)
-                        .toggleable(
-                            value = keyboard24Hour,
-                            enabled = keyboardMode,
-                            role = Role.Switch,
-                            onValueChange = onKeyboard24HourChange,
-                        ),
-                ) {
-                    Text(
-                        stringResource(R.string.keyboard_24_hour),
-                        modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (keyboardMode) 1f else 0.38f),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Switch(checked = keyboard24Hour, onCheckedChange = null, enabled = keyboardMode)
-                }
-              }
-
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-
-                Column(Modifier.selectableGroup()) {
-                    Text(
-                        stringResource(R.string.keypad_layout),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                    listOf(
-                        KeypadLayout.CALCULATOR to R.string.keypad_calculator,
-                        KeypadLayout.PHONE to R.string.keypad_phone,
-                    ).forEach { (layout, labelRes) ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp)
-                                .selectable(
-                                    selected = layout == keypadLayout,
-                                    role = Role.RadioButton,
-                                    onClick = { settings.setKeypadLayout(layout) },
-                                ),
-                        ) {
-                            RadioButton(selected = layout == keypadLayout, onClick = null)
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(labelRes))
-                        }
-                    }
-                    Text(
-                        stringResource(R.string.keypad_layout_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-
-                HorizontalDivider(Modifier.padding(vertical = 16.dp))
-
-                Text(
-                    stringResource(R.string.alarm_sound),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
+                SwitchRow(
+                    R.string.keyboard_24_hour,
+                    checked = keyboard24Hour,
+                    onCheckedChange = onKeyboard24HourChange,
+                    enabled = timeEntryMode == TimeEntryMode.KEYBOARD,
+                    modifier = Modifier.padding(start = 36.dp),
                 )
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                SettingsTitle(R.string.keypad_layout)
+                RadioOptions(
+                    listOf(KeypadLayout.CALCULATOR to R.string.keypad_calculator, KeypadLayout.PHONE to R.string.keypad_phone),
+                    selected = keypadLayout,
+                    onSelect = settings::setKeypadLayout,
+                )
+                SettingsHint(R.string.keypad_layout_hint)
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                SettingsTitle(R.string.alarm_sound)
                 Text(soundTitle, style = MaterialTheme.typography.bodyLarge)
                 // Wraps onto two lines when both buttons don't fit (narrow screens, large text).
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                    OutlinedButton(onClick = { pickSystemSound.launch(AlarmSound.pickerIntent(context, alarmSoundUri)) }) {
+                    OutlinedButton(onClick = { pickers.phoneSound(AlarmSound.pickerIntent(context, alarmSoundUri)) }) {
                         Text(stringResource(R.string.phone_sounds))
                     }
-                    OutlinedButton(onClick = { pickAudioFile.launch(arrayOf("audio/*")) }) {
+                    OutlinedButton(onClick = pickers.audioFile) {
                         Text(stringResource(R.string.audio_file))
                     }
                 }
-                Text(
-                    stringResource(R.string.alarm_sound_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+                SettingsHint(R.string.alarm_sound_hint)
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
-                Text(
-                    stringResource(R.string.ringing),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                SettingsTitle(R.string.ringing)
                 MinutesSetting(R.string.snooze_length, snoozeMinutes, AppSettings.SNOOZE_MINUTE_OPTIONS, settings::setSnoozeMinutes)
                 MinutesSetting(R.string.auto_stop, autoStopMinutes, AppSettings.AUTO_STOP_MINUTE_OPTIONS, settings::setAutoStopMinutes)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp)
-                        .toggleable(value = vibrate, role = Role.Switch, onValueChange = settings::setVibrate),
-                ) {
-                    Text(stringResource(R.string.vibrate), modifier = Modifier.weight(1f))
-                    Spacer(Modifier.width(12.dp))
-                    Switch(checked = vibrate, onCheckedChange = null)
-                }
+                SwitchRow(R.string.vibrate, checked = vibrate, onCheckedChange = settings::setVibrate)
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
-                Column(Modifier.selectableGroup()) {
-                    Text(
-                        stringResource(R.string.appearance),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
+                SettingsTitle(R.string.appearance)
+                RadioOptions(
                     listOf(
                         ThemeMode.SYSTEM to R.string.theme_system,
                         ThemeMode.LIGHT to R.string.theme_light,
                         ThemeMode.DARK to R.string.theme_dark,
-                    ).forEach { (mode, labelRes) ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 48.dp)
-                                .selectable(
-                                    selected = mode == themeMode,
-                                    role = Role.RadioButton,
-                                    onClick = { settings.setThemeMode(mode) },
-                                ),
-                        ) {
-                            RadioButton(selected = mode == themeMode, onClick = null)
-                            Spacer(Modifier.width(12.dp))
-                            Text(stringResource(labelRes))
-                        }
-                    }
-                }
+                    ),
+                    selected = themeMode,
+                    onSelect = settings::setThemeMode,
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
         },
     )
+}
+
+/** A heading above a group of settings. */
+@Composable
+private fun SettingsTitle(textRes: Int) {
+    Text(stringResource(textRes), style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom = 8.dp))
+}
+
+/** Small explanatory text under a setting. */
+@Composable
+private fun SettingsHint(textRes: Int) {
+    Text(
+        stringResource(textRes),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 8.dp),
+    )
+}
+
+/** One radio button per option (value to its label), the whole row tappable. */
+@Composable
+private fun <T> RadioOptions(options: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
+    Column(Modifier.selectableGroup()) {
+        options.forEach { (value, labelRes) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .selectable(selected = value == selected, role = Role.RadioButton, onClick = { onSelect(value) }),
+            ) {
+                RadioButton(selected = value == selected, onClick = null)
+                Spacer(Modifier.width(12.dp))
+                Text(stringResource(labelRes))
+            }
+        }
+    }
+}
+
+/** A label with a switch at the end, the whole row tappable; greyed out when not [enabled]. */
+@Composable
+private fun SwitchRow(
+    textRes: Int,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .then(modifier)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onCheckedChange),
+    ) {
+        Text(
+            stringResource(textRes),
+            modifier = Modifier.weight(1f),
+            color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        )
+        Spacer(Modifier.width(12.dp))
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+    }
+}
+
+/** Starts the phone's alarm-sound picker (with its intent) or the audio-file picker. */
+private class SoundPickers(val phoneSound: (Intent) -> Unit, val audioFile: () -> Unit)
+
+/**
+ * The system sound picker (one of the phone's alarm sounds; [onPicked] gets null if it gives no
+ * sound back) and the document picker (any audio file; cancelling it picks nothing).
+ */
+@Composable
+private fun rememberSoundPickers(onPicked: (Uri?) -> Unit): SoundPickers {
+    val system = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val data = result.data ?: return@rememberLauncherForActivityResult
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        onPicked(IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java))
+    }
+    val file = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) onPicked(uri)
+    }
+    return SoundPickers(phoneSound = system::launch, audioFile = { file.launch(arrayOf("audio/*")) })
 }
 
 /** "Snooze length    10 min ▾": a label with a drop-down list of minute values. */
@@ -692,7 +651,7 @@ private fun AlarmCard(
 ) {
     val context = LocalContext.current
     val contentAlpha = if (alarm.enabled) 1f else 0.5f
-    val subtitle = listOf(alarm.label, repeatText(context, alarm.days)).filter { it.isNotBlank() }.joinToString(" · ")
+    val subtitle = joinNonBlank(alarm.label, repeatText(context, alarm.days))
 
     Card(onClick = onClick, modifier = Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -740,7 +699,7 @@ private fun AlarmCard(
             // Screen readers say which alarm the button and switch belong to, e.g. "06:30 Work alarm".
             val alarmName = stringResource(
                 R.string.alarm_name,
-                listOf(formatTime(context, alarm.hour, alarm.minute), alarm.label).filter { it.isNotBlank() }.joinToString(" "),
+                joinNonBlank(formatTime(context, alarm.hour, alarm.minute), alarm.label, separator = " "),
             )
             IconButton(onClick = onDelete) {
                 Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_named_alarm, alarmName))
@@ -851,15 +810,7 @@ private fun AlarmSoundChooser(soundUri: String?, defaultSoundUri: String?, onCha
             resources.getString(R.string.sound_default, AlarmSound.title(context, defaultSoundUri))
         }
     }
-    val pickSystemSound = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        val data = result.data ?: return@rememberLauncherForActivityResult
-        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
-        IntentCompat.getParcelableExtra(data, RingtoneManager.EXTRA_RINGTONE_PICKED_URI, Uri::class.java)
-            ?.let { onChange(AlarmSound.accept(context, it)) }
-    }
-    val pickAudioFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) onChange(AlarmSound.accept(context, uri))
-    }
+    val pickers = rememberSoundPickers { uri -> uri?.let { onChange(AlarmSound.accept(context, it)) } }
 
     Column {
         Text(stringResource(R.string.sound), style = MaterialTheme.typography.titleSmall)
@@ -881,14 +832,14 @@ private fun AlarmSoundChooser(soundUri: String?, defaultSoundUri: String?, onCha
                         onClick = {
                             menuOpen = false
                             // No "Default" entry here: "Default" for an alarm means the settings' sound.
-                            pickSystemSound.launch(AlarmSound.pickerIntent(context, soundUri ?: defaultSoundUri, showDefault = false))
+                            pickers.phoneSound(AlarmSound.pickerIntent(context, soundUri ?: defaultSoundUri, showDefault = false))
                         },
                     )
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.audio_file)) },
                         onClick = {
                             menuOpen = false
-                            pickAudioFile.launch(arrayOf("audio/*"))
+                            pickers.audioFile()
                         },
                     )
                 }

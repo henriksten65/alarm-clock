@@ -5,9 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import android.provider.Settings
-import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -234,11 +231,7 @@ object Timer {
         )
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val done = action(context, TimerReceiver.ACTION_DONE, state.id)
-        try {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, updated.endElapsed, done)
-        } catch (e: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, updated.endElapsed, done)
-        }
+        alarmManager.setExactOrInexact(AlarmManager.ELAPSED_REALTIME_WAKEUP, updated.endElapsed, done)
         save(context, updated)
     }
 
@@ -321,9 +314,6 @@ object Timer {
         return list
     }
 
-    private fun bootCount(context: Context): Int =
-        Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
-
     // --- Notifications ---
 
     /** "Eggs" (or "Timer") with a countdown in the status bar while running; "Eggs paused · 4:32" while paused. */
@@ -331,16 +321,8 @@ object Timer {
         createNotificationChannel(context)
         val running = state.status == TimerStatus.RUNNING
         val name = state.label.ifBlank { context.getString(R.string.timer) }
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_timer)
-            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSilent(true)
+        val builder = ongoingNotificationBuilder(context, CHANNEL_ID, R.drawable.ic_timer, openTabIntent(context, MainActivity.TAB_TIMER, 1))
             .setSortKey("%010d".format(state.id))
-            .setContentIntent(openTimerTab(context))
         if (running) {
             builder.setContentTitle(name)
                 .setUsesChronometer(true)
@@ -358,36 +340,15 @@ object Timer {
         }
         builder.addAction(0, context.getString(R.string.add_minute), action(context, TimerReceiver.ACTION_ADD_MINUTE, state.id))
             .addAction(0, context.getString(R.string.reset), action(context, TimerReceiver.ACTION_RESET, state.id))
-        try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BASE + state.id, builder.build())
-        } catch (e: SecurityException) {
-            // Notifications are off; the app already shows a banner about that.
-        }
+        notifyIfAllowed(context, NOTIFICATION_ID_BASE + state.id, builder.build())
     }
 
     private fun hideNotification(context: Context, id: Int) {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID_BASE + id)
     }
 
-    /** Default importance (so the icon shows in the status bar), but silent. */
-    fun createNotificationChannel(context: Context) {
-        val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
-            .setName(context.getString(R.string.timer))
-            .setSound(null, null)
-            .setVibrationEnabled(false)
-            .setShowBadge(false)
-            .build()
-        NotificationManagerCompat.from(context).createNotificationChannel(channel)
-    }
-
-    fun openTimerTab(context: Context): PendingIntent = PendingIntent.getActivity(
-        context,
-        1,
-        Intent(context, MainActivity::class.java)
-            .putExtra(MainActivity.EXTRA_TAB, MainActivity.TAB_TIMER)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-    )
+    fun createNotificationChannel(context: Context) =
+        createSilentChannel(context, CHANNEL_ID, context.getString(R.string.timer), showBadge = false)
 
     /** A broadcast to [TimerReceiver] for one timer; the data URI keeps each timer's intents apart. */
     fun action(context: Context, action: String, id: Int): PendingIntent = PendingIntent.getBroadcast(

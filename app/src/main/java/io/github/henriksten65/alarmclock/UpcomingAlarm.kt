@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import androidx.core.app.NotificationChannelCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 
@@ -29,12 +28,8 @@ object UpcomingAlarm {
             showAt <= now -> show(context, alarm, triggerAtMillis)
             else -> {
                 hide(context, alarm.id)
-                try {
-                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, showAt, reminder)
-                } catch (e: SecurityException) {
-                    // No exact alarms: a few minutes late is fine for a reminder.
-                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, showAt, reminder)
-                }
+                // Without exact alarms, a few minutes late is fine for a reminder.
+                alarmManager.setExactOrInexact(AlarmManager.RTC_WAKEUP, showAt, reminder)
             }
         }
     }
@@ -62,16 +57,7 @@ object UpcomingAlarm {
         val now = System.currentTimeMillis()
         val snoozed = alarm.isSnoozed(now)
         val time = formatTime(context, ringAt)
-        val text = listOf(
-            if (snoozed) context.getString(R.string.snoozed_until, time) else time,
-            alarm.label,
-        ).filter { it.isNotBlank() }.joinToString(" · ")
-        val openApp = PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val text = joinNonBlank(if (snoozed) context.getString(R.string.snoozed_until, time) else time, alarm.label)
         val dismiss = PendingIntent.getBroadcast(
             context,
             alarm.id,
@@ -90,30 +76,16 @@ object UpcomingAlarm {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setShowWhen(false)
             .setOnlyAlertOnce(true)
-            .setContentIntent(openApp)
+            .setContentIntent(openAppIntent(context))
             // Gone by itself when the alarm rings (the ringing notification takes over).
             .setTimeoutAfter(ringAt - now)
             .addAction(0, context.getString(R.string.dismiss), dismiss)
             .build()
-        try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID_BASE + alarm.id, notification)
-        } catch (e: SecurityException) {
-            // Notifications are off; the app already shows a banner about that.
-        }
+        notifyIfAllowed(context, NOTIFICATION_ID_BASE + alarm.id, notification)
     }
 
-    /**
-     * Default importance so the icon shows in the status bar (Android hides the icons of
-     * low-importance "silent" notifications there), but without sound or vibration.
-     */
-    fun createNotificationChannel(context: Context) {
-        val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
-            .setName(context.getString(R.string.upcoming_channel_name))
-            .setSound(null, null)
-            .setVibrationEnabled(false)
-            .build()
-        NotificationManagerCompat.from(context).createNotificationChannel(channel)
-    }
+    fun createNotificationChannel(context: Context) =
+        createSilentChannel(context, CHANNEL_ID, context.getString(R.string.upcoming_channel_name))
 
     private fun reminderIntent(context: Context, alarmId: Int): PendingIntent =
         PendingIntent.getBroadcast(

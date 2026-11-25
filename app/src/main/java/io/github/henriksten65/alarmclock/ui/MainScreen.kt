@@ -20,8 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import io.github.henriksten65.alarmclock.AlarmRepository
@@ -48,7 +46,6 @@ fun MainScreen(
     // Back on the Timer or Stopwatch tab goes to the alarms, the app's start screen.
     BackHandler(enabled = tab != Tab.ALARMS) { onTabChange(Tab.ALARMS) }
 
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
     val content = @Composable { modifier: Modifier ->
         when (tab) {
             Tab.ALARMS -> AlarmListScreen(repository, settings, modifier)
@@ -60,7 +57,7 @@ fun MainScreen(
     // One layout tree for both: only the bar or the rail is switched. The tab's screen stays at the
     // same place in the composition, so its saved state (open dialogs, typed text) has the same keys
     // in portrait and landscape and survives rotating. (Separate Row/Scaffold trees lost it.)
-    val short = windowHeight < SHORT_WINDOW_HEIGHT
+    val short = isShortWindow()
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         bottomBar = {

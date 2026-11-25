@@ -33,7 +33,7 @@ class AlarmReceiver : BroadcastReceiver() {
             // Schedule the next selected day (offset by a minute so we never re-pick this occurrence).
             AlarmScheduler.schedule(context, updated, updated.nextTriggerMillis(now + 60_000L))
         } else {
-            repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+            AlarmScheduler.switchOff(context, alarm)
             AlarmScheduler.forgetDueTime(context, alarmId)
         }
 

@@ -218,19 +218,11 @@ class AlarmService : Service() {
 
         /** "Missed alarm: 06:15 · Work" with [text] saying why. */
         fun notifyMissed(context: Context, alarm: Alarm, text: String) {
-            val what = listOf(formatTime(context, alarm.hour, alarm.minute), alarm.label)
-                .filter { it.isNotBlank() }
-                .joinToString(" · ")
+            val what = joinNonBlank(formatTime(context, alarm.hour, alarm.minute), alarm.label)
             postMissed(context, MISSED_NOTIFICATION_ID_BASE + alarm.id, R.drawable.ic_alarm, context.getString(R.string.missed_alarm, what), text)
         }
 
         private fun postMissed(context: Context, id: Int, icon: Int, title: String, text: String) {
-            val openApp = PendingIntent.getActivity(
-                context,
-                0,
-                Intent(context, MainActivity::class.java),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            )
             createNotificationChannel(context)
             val notification = NotificationCompat.Builder(context, MISSED_CHANNEL_ID)
                 .setSmallIcon(icon)
@@ -239,14 +231,10 @@ class AlarmService : Service() {
                 .setCategory(NotificationCompat.CATEGORY_REMINDER)
                 .setWhen(System.currentTimeMillis())
                 .setShowWhen(true)
-                .setContentIntent(openApp)
+                .setContentIntent(openAppIntent(context))
                 .setAutoCancel(true)
                 .build()
-            try {
-                NotificationManagerCompat.from(context).notify(id, notification)
-            } catch (e: SecurityException) {
-                // Notifications are off; the app already shows a banner about that.
-            }
+            notifyIfAllowed(context, id, notification)
         }
 
         /** Creates the notification channels (safe to call repeatedly). */

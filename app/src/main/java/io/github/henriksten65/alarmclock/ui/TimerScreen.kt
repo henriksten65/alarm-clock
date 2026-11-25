@@ -1,6 +1,5 @@
 package io.github.henriksten65.alarmclock.ui
 
-import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,8 +15,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
@@ -57,7 +54,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -85,7 +81,6 @@ import io.github.henriksten65.alarmclock.Timer
 import io.github.henriksten65.alarmclock.TimerState
 import io.github.henriksten65.alarmclock.TimerStatus
 import io.github.henriksten65.alarmclock.formatDuration
-import kotlinx.coroutines.delay
 
 /** At most six digits, read as hhmmss from the right: "130" is 1 min 30 s. */
 internal fun timerDigitsToMillis(digits: String): Long {
@@ -119,8 +114,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 
     var renaming by rememberSaveable { mutableStateOf<Int?>(null) }
 
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
+    val shortWindow = isShortWindow()
 
     Scaffold(
         modifier = modifier,
@@ -198,15 +192,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 private fun TimerList(timers: List<TimerState>, ringingTimerId: Int?, onRename: (Int) -> Unit) {
     val context = LocalContext.current
     // One clock for all cards, ticking while any timer runs.
-    var nowElapsed by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    val anyRunning = timers.any { it.status == TimerStatus.RUNNING }
-    LaunchedEffect(anyRunning) {
-        nowElapsed = SystemClock.elapsedRealtime()
-        while (anyRunning) {
-            delay(100)
-            nowElapsed = SystemClock.elapsedRealtime()
-        }
-    }
+    val nowElapsed = rememberElapsedNow(ticking = timers.any { it.status == TimerStatus.RUNNING }, intervalMillis = 100)
     Column(
         Modifier
             .widthIn(max = MAX_CONTENT_WIDTH)

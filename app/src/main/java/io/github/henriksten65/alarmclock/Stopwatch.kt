@@ -4,9 +4,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.SystemClock
-import android.provider.Settings
-import androidx.core.app.NotificationChannelCompat
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.edit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -160,24 +157,15 @@ object Stopwatch {
         loaded = true
     }
 
-    private fun bootCount(context: Context): Int =
-        Settings.Global.getInt(context.contentResolver, Settings.Global.BOOT_COUNT, 0)
-
     // --- Notification ---
 
     /** "Stopwatch" counting up in the status bar while running; "Stopwatch paused · 1:23" while paused. */
     private fun showNotification(context: Context, state: StopwatchState) {
         createNotificationChannel(context)
         val running = state.status == StopwatchStatus.RUNNING
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stopwatch)
-            .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setOnlyAlertOnce(true)
-            .setSilent(true)
-            .setContentIntent(openStopwatchTab(context))
+        val builder = ongoingNotificationBuilder(
+            context, CHANNEL_ID, R.drawable.ic_stopwatch, openTabIntent(context, MainActivity.TAB_STOPWATCH, 2),
+        )
         if (state.laps.isNotEmpty()) {
             builder.setSubText(context.getString(R.string.lap_number, state.laps.size + if (running) 1 else 0))
         }
@@ -196,36 +184,15 @@ object Stopwatch {
                 .addAction(0, context.getString(R.string.resume), action(context, StopwatchReceiver.ACTION_RESUME))
                 .addAction(0, context.getString(R.string.reset), action(context, StopwatchReceiver.ACTION_RESET))
         }
-        try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
-        } catch (e: SecurityException) {
-            // Notifications are off; the app already shows a banner about that.
-        }
+        notifyIfAllowed(context, NOTIFICATION_ID, builder.build())
     }
 
     private fun hideNotification(context: Context) {
         NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
     }
 
-    /** Default importance (so the icon shows in the status bar), but silent. */
-    fun createNotificationChannel(context: Context) {
-        val channel = NotificationChannelCompat.Builder(CHANNEL_ID, NotificationManagerCompat.IMPORTANCE_DEFAULT)
-            .setName(context.getString(R.string.stopwatch))
-            .setSound(null, null)
-            .setVibrationEnabled(false)
-            .setShowBadge(false)
-            .build()
-        NotificationManagerCompat.from(context).createNotificationChannel(channel)
-    }
-
-    private fun openStopwatchTab(context: Context): PendingIntent = PendingIntent.getActivity(
-        context,
-        2,
-        Intent(context, MainActivity::class.java)
-            .putExtra(MainActivity.EXTRA_TAB, MainActivity.TAB_STOPWATCH)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP),
-        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-    )
+    fun createNotificationChannel(context: Context) =
+        createSilentChannel(context, CHANNEL_ID, context.getString(R.string.stopwatch), showBadge = false)
 
     private fun action(context: Context, action: String): PendingIntent = PendingIntent.getBroadcast(
         context,

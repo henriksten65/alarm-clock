@@ -1,10 +1,10 @@
 package io.github.henriksten65.alarmclock.ui
 
-import android.os.SystemClock
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,16 +23,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -44,7 +38,6 @@ import io.github.henriksten65.alarmclock.R
 import io.github.henriksten65.alarmclock.Stopwatch
 import io.github.henriksten65.alarmclock.StopwatchStatus
 import io.github.henriksten65.alarmclock.formatStopwatch
-import kotlinx.coroutines.delay
 
 /** Digits all the same width, so the running time doesn't jiggle. */
 private fun TextStyle.tabular() = copy(fontFeatureSettings = "tnum")
@@ -56,18 +49,9 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
     val state by Stopwatch.state(context).collectAsStateWithLifecycle()
     val running = state.status == StopwatchStatus.RUNNING
 
-    var nowElapsed by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(running) {
-        nowElapsed = SystemClock.elapsedRealtime()
-        while (running) {
-            delay(31)
-            nowElapsed = SystemClock.elapsedRealtime()
-        }
-    }
-    val elapsed = state.elapsed(nowElapsed)
+    val elapsed = state.elapsed(rememberElapsedNow(ticking = running, intervalMillis = 31))
     // Less space around the time when the window is short (a phone in landscape), so laps show.
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    val shortWindow = windowHeight < SHORT_WINDOW_HEIGHT
+    val shortWindow = isShortWindow()
 
     // Newest first, each with its own time and the total: (number, lap time, total). The lap
     // in progress is on top while there are laps.
@@ -107,27 +91,15 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
                         }
                         Spacer(Modifier.height(if (shortWindow) 12.dp else 32.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            val buttonModifier = Modifier.heightIn(min = 56.dp).widthIn(min = 128.dp)
                             when (state.status) {
-                                StopwatchStatus.IDLE ->
-                                    Button(onClick = { Stopwatch.start(context) }, modifier = buttonModifier) {
-                                        Text(stringResource(R.string.start), style = MaterialTheme.typography.titleMedium)
-                                    }
+                                StopwatchStatus.IDLE -> ControlButton(R.string.start) { Stopwatch.start(context) }
                                 StopwatchStatus.RUNNING -> {
-                                    OutlinedButton(onClick = { Stopwatch.lap(context) }, modifier = buttonModifier) {
-                                        Text(stringResource(R.string.lap), style = MaterialTheme.typography.titleMedium)
-                                    }
-                                    Button(onClick = { Stopwatch.pause(context) }, modifier = buttonModifier) {
-                                        Text(stringResource(R.string.pause), style = MaterialTheme.typography.titleMedium)
-                                    }
+                                    ControlButton(R.string.lap, outlined = true) { Stopwatch.lap(context) }
+                                    ControlButton(R.string.pause) { Stopwatch.pause(context) }
                                 }
                                 StopwatchStatus.PAUSED -> {
-                                    OutlinedButton(onClick = { Stopwatch.reset(context) }, modifier = buttonModifier) {
-                                        Text(stringResource(R.string.reset), style = MaterialTheme.typography.titleMedium)
-                                    }
-                                    Button(onClick = { Stopwatch.resume(context) }, modifier = buttonModifier) {
-                                        Text(stringResource(R.string.resume), style = MaterialTheme.typography.titleMedium)
-                                    }
+                                    ControlButton(R.string.reset, outlined = true) { Stopwatch.reset(context) }
+                                    ControlButton(R.string.resume) { Stopwatch.resume(context) }
                                 }
                             }
                         }
@@ -141,6 +113,17 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
             }
         }
     }
+}
+
+/** A large Start / Lap / Pause / Reset / Resume button. */
+@Composable
+private fun ControlButton(textRes: Int, outlined: Boolean = false, onClick: () -> Unit) {
+    val modifier = Modifier.heightIn(min = 56.dp).widthIn(min = 128.dp)
+    val content: @Composable RowScope.() -> Unit = {
+        Text(stringResource(textRes), style = MaterialTheme.typography.titleMedium)
+    }
+    if (outlined) OutlinedButton(onClick = onClick, modifier = modifier, content = content)
+    else Button(onClick = onClick, modifier = modifier, content = content)
 }
 
 @Composable

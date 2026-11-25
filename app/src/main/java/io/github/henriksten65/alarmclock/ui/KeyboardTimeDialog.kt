@@ -44,8 +44,6 @@ import androidx.compose.ui.input.key.utf16CodePoint
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -110,8 +108,7 @@ fun KeyboardTimeDialog(
 
     // In a short window (landscape) the app's keypad goes beside the time and the title is left
     // out, so nothing needs scrolling.
-    val windowHeight = with(LocalDensity.current) { LocalWindowInfo.current.containerSize.height.toDp() }
-    val keypadBeside = ownKeypad && windowHeight < SHORT_WINDOW_HEIGHT
+    val keypadBeside = ownKeypad && isShortWindow()
 
     val focusRequester = remember { FocusRequester() }
     AlertDialog(

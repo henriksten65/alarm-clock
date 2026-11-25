@@ -18,12 +18,7 @@ object AlarmScheduler {
     ): Boolean {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         // Shown by the system (e.g. in the status bar / lock screen); opens the app when tapped.
-        val showIntent = PendingIntent.getActivity(
-            context,
-            alarm.id,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val showIntent = openAppIntent(context, alarm.id)
         return try {
             alarmManager.setAlarmClock(
                 AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
@@ -70,22 +65,16 @@ object AlarmScheduler {
                 due != null && due <= now -> {
                     AlarmService.notifyMissed(context, alarm, context.getString(R.string.missed_phone_off))
                     if (alarm.repeats) {
-                        alarm.copy(snoozedUntil = 0L).also {
-                            repository.upsert(it)
-                            schedule(context, it)
-                        }
+                        resumeSchedule(context, alarm)
                     } else {
-                        repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                        switchOff(context, alarm)
                         forgetDueTime(context, alarm.id)
                     }
                 }
                 alarm.snoozedUntil == 0L || alarm.isSnoozed(now) -> schedule(context, alarm)
-                alarm.repeats -> alarm.copy(snoozedUntil = 0L).also {
-                    repository.upsert(it)
-                    schedule(context, it)
-                }
+                alarm.repeats -> resumeSchedule(context, alarm)
                 // A one-time alarm whose snooze was missed: it has rung already, so switch it off.
-                else -> repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                else -> switchOff(context, alarm)
             }
         }
     }
@@ -115,14 +104,11 @@ object AlarmScheduler {
      * a one-time alarm (which has already rung) is switched off.
      */
     fun cancelSnooze(context: Context, alarmId: Int) {
-        val repository = AlarmRepository.getInstance(context)
-        val alarm = repository.get(alarmId) ?: return
+        val alarm = AlarmRepository.getInstance(context).get(alarmId) ?: return
         if (alarm.repeats) {
-            val updated = alarm.copy(snoozedUntil = 0L)
-            repository.upsert(updated)
-            schedule(context, updated)
+            resumeSchedule(context, alarm)
         } else {
-            repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+            switchOff(context, alarm)
             cancel(context, alarmId)
         }
     }
@@ -158,10 +144,22 @@ object AlarmScheduler {
             alarm.isSnoozed() -> cancelSnooze(context, alarmId)
             alarm.repeats -> skipNext(context, alarmId)
             else -> {
-                repository.upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+                switchOff(context, alarm)
                 cancel(context, alarmId)
             }
         }
+    }
+
+    /** Switched off with no snooze left (only saved; the caller cancels or forgets what's scheduled). */
+    fun switchOff(context: Context, alarm: Alarm) {
+        AlarmRepository.getInstance(context).upsert(alarm.copy(enabled = false, snoozedUntil = 0L))
+    }
+
+    /** A repeating alarm without its snooze, back on its regular schedule. */
+    private fun resumeSchedule(context: Context, alarm: Alarm) {
+        val updated = alarm.copy(snoozedUntil = 0L)
+        AlarmRepository.getInstance(context).upsert(updated)
+        schedule(context, updated)
     }
 
     fun stopRinging(context: Context) {
