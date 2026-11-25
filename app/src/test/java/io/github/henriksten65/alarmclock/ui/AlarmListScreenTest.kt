@@ -257,6 +257,27 @@ class AlarmListScreenTest {
     }
 
     @Test
+    fun skipNextButtonCanBeSwitchedOffButASkipCanStillBeUndone() {
+        val base = Alarm(id = 1, hour = 7, minute = 0, days = Alarm.EVERY_DAY)
+        add(base)
+        add(base.copy(id = 2, hour = 8).let { it.copy(skippedAt = it.nextOccurrenceMillis()) })
+        show()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        settle()
+        compose.onNodeWithText("Show “Skip next”").performScrollTo().performClick()
+        settle()
+        assertFalse(TestSupport.settings.showSkipNext.value)
+        compose.onNodeWithText("Done").performClick()
+        settle()
+
+        compose.onNodeWithText("Skip next").assertDoesNotExist()
+        compose.onNodeWithText("Don't skip").performClick()
+        settle()
+        assertFalse(repo.get(2)!!.isSkipping())
+        compose.onNodeWithText("Skip next").assertDoesNotExist()
+    }
+
+    @Test
     fun oneTimeAlarmsHaveNoSkip() {
         add(Alarm(id = 1, hour = 7, minute = 0))
         show()

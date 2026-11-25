@@ -82,6 +82,9 @@
     <string name="snooze_length">Snoozetid</string>
     <string name="auto_stop">Sluta ringa efter</string>
     <string name="vibrate">Vibrera</string>
+    <string name="alarm_list">Larmlistan</string>
+    <string name="show_skip_next">Visa ”Hoppa över nästa”</string>
+    <string name="show_skip_next_hint">En knapp på upprepade larm som hoppar över bara nästa ringning.</string>
     <string name="appearance">Utseende</string>
     <string name="theme_system">Samma som telefonen</string>
     <string name="theme_light">Ljust</string>

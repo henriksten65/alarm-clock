@@ -135,6 +135,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
     val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
     val keypadLayout by settings.keypadLayout.collectAsStateWithLifecycle()
     val defaultSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
+    val showSkipNext by settings.showSkipNext.collectAsStateWithLifecycle()
     // Saveable, so an open dialog (and what was changed in it) survives rotating the phone.
     var editing by rememberSaveable(stateSaver = AlarmSaver) { mutableStateOf<Alarm?>(null) }
     var showSettings by rememberSaveable { mutableStateOf(false) }
@@ -302,6 +303,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
                         AlarmCard(
                             alarm = alarm,
                             now = now,
+                            showSkipNext = showSkipNext,
                             onClick = { editing = alarm },
                             onToggle = { checked ->
                                 if (checked) {
@@ -392,6 +394,7 @@ private fun SettingsDialog(
     val vibrate by settings.vibrate.collectAsStateWithLifecycle()
     val themeMode by settings.themeMode.collectAsStateWithLifecycle()
     val keypadLayout by settings.keypadLayout.collectAsStateWithLifecycle()
+    val showSkipNext by settings.showSkipNext.collectAsStateWithLifecycle()
 
     val pickers = rememberSoundPickers { AlarmSound.choose(context, settings, it) }
 
@@ -446,6 +449,12 @@ private fun SettingsDialog(
                 MinutesSetting(R.string.snooze_length, snoozeMinutes, AppSettings.SNOOZE_MINUTE_OPTIONS, settings::setSnoozeMinutes)
                 MinutesSetting(R.string.auto_stop, autoStopMinutes, AppSettings.AUTO_STOP_MINUTE_OPTIONS, settings::setAutoStopMinutes)
                 SwitchRow(R.string.vibrate, checked = vibrate, onCheckedChange = settings::setVibrate)
+
+                HorizontalDivider(Modifier.padding(vertical = 16.dp))
+
+                SettingsTitle(R.string.alarm_list)
+                SwitchRow(R.string.show_skip_next, checked = showSkipNext, onCheckedChange = settings::setShowSkipNext)
+                SettingsHint(R.string.show_skip_next_hint)
 
                 HorizontalDivider(Modifier.padding(vertical = 16.dp))
 
@@ -642,6 +651,7 @@ private fun RingingCard(alarm: Alarm?, onSnooze: () -> Unit, onDismiss: () -> Un
 private fun AlarmCard(
     alarm: Alarm,
     now: Long,
+    showSkipNext: Boolean,
     onClick: () -> Unit,
     onToggle: (Boolean) -> Unit,
     onCancelSnooze: () -> Unit,
@@ -689,7 +699,9 @@ private fun AlarmCard(
                             )
                             TextButton(onClick = onCancelSkip) { Text(stringResource(R.string.dont_skip)) }
                         }
-                    } else {
+                    } else if (showSkipNext) {
+                        // A skip already set (e.g. from the "Upcoming alarm" notification) is still shown
+                        // above, so it can be undone with the button switched off.
                         TextButton(onClick = onSkipNext, contentPadding = PaddingValues(horizontal = 0.dp)) {
                             Text(stringResource(R.string.skip_next))
                         }

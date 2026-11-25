@@ -84,6 +84,9 @@
     <string name="snooze_length">Duração da soneca</string>
     <string name="auto_stop">Parar de tocar após</string>
     <string name="vibrate">Vibrar</string>
+    <string name="alarm_list">Lista de alarmes</string>
+    <string name="show_skip_next">Mostrar “Pular o próximo”</string>
+    <string name="show_skip_next_hint">Um botão nos alarmes repetidos que pula só o próximo toque.</string>
     <string name="appearance">Aparência</string>
     <string name="theme_system">Igual ao telefone</string>
     <string name="theme_light">Claro</string>

@@ -82,6 +82,9 @@
     <string name="snooze_length">Schlummerdauer</string>
     <string name="auto_stop">Klingeln beenden nach</string>
     <string name="vibrate">Vibrieren</string>
+    <string name="alarm_list">Weckerliste</string>
+    <string name="show_skip_next">„Nächsten auslassen“ anzeigen</string>
+    <string name="show_skip_next_hint">Eine Schaltfläche bei wiederholten Weckern, die nur das nächste Klingeln auslässt.</string>
     <string name="appearance">Darstellung</string>
     <string name="theme_system">Wie das Telefon</string>
     <string name="theme_light">Hell</string>

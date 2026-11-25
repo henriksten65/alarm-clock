@@ -49,7 +49,8 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   switches off and a repeating one waits for its next day. The same goes for snoozes
 - **Skip next** on a repeating alarm skips just its next ring ("Skipping Mon 07:30" with
   **Don't skip**); it rings as usual after that. Switching the alarm off or changing its time or
-  days cancels the skip. A pending snooze still rings
+  days cancels the skip. A pending snooze still rings. The button can be hidden in
+  Settings → Alarm list (shown by default); a skip already set still shows with **Don't skip**
 - Snooze is shown on the alarm ("Snoozed until 06:25") with **Cancel snooze**, and survives a
   reboot, app update or time change
 - While an alarm rings, the app shows a **Ringing** card with Dismiss/Snooze, and opening the app

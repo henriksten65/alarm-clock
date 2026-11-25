@@ -84,6 +84,9 @@
     <string name="snooze_length">Durée du rappel</string>
     <string name="auto_stop">Arrêter la sonnerie après</string>
     <string name="vibrate">Vibreur</string>
+    <string name="alarm_list">Liste des alarmes</string>
+    <string name="show_skip_next">Afficher « Ignorer la prochaine »</string>
+    <string name="show_skip_next_hint">Un bouton sur les alarmes répétées qui ignore seulement leur prochaine sonnerie.</string>
     <string name="appearance">Apparence</string>
     <string name="theme_system">Comme le téléphone</string>
     <string name="theme_light">Clair</string>

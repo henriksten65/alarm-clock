@@ -24,6 +24,7 @@ class AppSettingsTest {
         assertEquals(10, settings.snoozeMinutes.value)
         assertEquals(10, settings.autoStopMinutes.value)
         assertTrue(settings.vibrate.value)
+        assertTrue(settings.showSkipNext.value)
         assertEquals(ThemeMode.SYSTEM, settings.themeMode.value)
     }
 
@@ -36,6 +37,7 @@ class AppSettingsTest {
             setSnoozeMinutes(5)
             setAutoStopMinutes(20)
             setVibrate(false)
+            setShowSkipNext(false)
             setThemeMode(ThemeMode.DARK)
             assertEquals(TimeEntryMode.KEYBOARD, timeEntryMode.value)
             assertEquals(ThemeMode.DARK, themeMode.value)
@@ -50,6 +52,7 @@ class AppSettingsTest {
             assertEquals(5, snoozeMinutes.value)
             assertEquals(20, autoStopMinutes.value)
             assertFalse(vibrate.value)
+            assertFalse(showSkipNext.value)
             assertEquals(ThemeMode.DARK, themeMode.value)
         }
     }

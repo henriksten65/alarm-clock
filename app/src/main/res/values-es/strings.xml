@@ -84,6 +84,9 @@
     <string name="snooze_length">Duración de la posposición</string>
     <string name="auto_stop">Dejar de sonar tras</string>
     <string name="vibrate">Vibrar</string>
+    <string name="alarm_list">Lista de alarmas</string>
+    <string name="show_skip_next">Mostrar «Omitir la siguiente»</string>
+    <string name="show_skip_next_hint">Un botón en las alarmas repetidas que omite solo su próximo sonido.</string>
     <string name="appearance">Apariencia</string>
     <string name="theme_system">Igual que el teléfono</string>
     <string name="theme_light">Claro</string>

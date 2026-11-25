@@ -94,6 +94,15 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putBoolean(KEY_VIBRATE, enabled) }
     }
 
+    /** Whether repeating alarms' cards show a "Skip next" button (on by default). */
+    private val _showSkipNext = MutableStateFlow(prefs.getBoolean(KEY_SHOW_SKIP_NEXT, true))
+    val showSkipNext: StateFlow<Boolean> = _showSkipNext.asStateFlow()
+
+    fun setShowSkipNext(enabled: Boolean) {
+        _showSkipNext.value = enabled
+        prefs.edit { putBoolean(KEY_SHOW_SKIP_NEXT, enabled) }
+    }
+
     /** Phone (1 2 3 at the top) or calculator (7 8 9 at the top) order for the number keypads. */
     private val _keypadLayout = MutableStateFlow(
         prefs.getString(KEY_KEYPAD_LAYOUT, null)
@@ -135,6 +144,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_VIBRATE = "vibrate"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_KEYPAD_LAYOUT = "keypad_layout"
+        private const val KEY_SHOW_SKIP_NEXT = "show_skip_next"
 
         @Volatile
         private var instance: AppSettings? = null
