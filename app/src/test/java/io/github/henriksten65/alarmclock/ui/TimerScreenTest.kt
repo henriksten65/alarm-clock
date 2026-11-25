@@ -64,6 +64,14 @@ class TimerScreenTest {
     }
 
     @Test
+    fun settingsOpenFromTheTimerTab() {
+        showTimer()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        settle()
+        compose.onNodeWithText("Appearance").assertExists()
+    }
+
+    @Test
     fun tabsSwitchBetweenAlarmsAndTimer() {
         showTabs()
         compose.onNodeWithText("No alarms yet.\nTap + to add one.").assertExists()

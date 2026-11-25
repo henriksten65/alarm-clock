@@ -53,6 +53,14 @@ class StopwatchScreenTest {
     private fun showStopwatch() = compose.setContent { AlarmClockTheme { StopwatchScreen() } }
 
     @Test
+    fun settingsOpenFromTheStopwatchTab() {
+        showStopwatch()
+        compose.onNodeWithContentDescription("Settings").performClick()
+        pass(500)
+        compose.onNodeWithText("Appearance").assertExists()
+    }
+
+    @Test
     fun stopwatchIsTheThirdTab() {
         compose.setContent {
             AlarmClockTheme {

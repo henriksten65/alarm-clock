@@ -138,7 +138,6 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
     val showSkipNext by settings.showSkipNext.collectAsStateWithLifecycle()
     // Saveable, so an open dialog (and what was changed in it) survives rotating the phone.
     var editing by rememberSaveable(stateSaver = AlarmSaver) { mutableStateOf<Alarm?>(null) }
-    var showSettings by rememberSaveable { mutableStateOf(false) }
     val ringingAlarmId by AlarmService.ringingAlarmId.collectAsStateWithLifecycle()
 
     // Phone settings that can stop alarms from being heard, seen or dismissed.
@@ -230,9 +229,7 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
                             Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_alarm))
                         }
                     }
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
-                    }
+                    SettingsButton(settings)
                 },
             )
         },
@@ -364,29 +361,25 @@ fun AlarmListScreen(repository: AlarmRepository, settings: AppSettings, modifier
         )
     }
 
-    if (showSettings) {
-        SettingsDialog(
-            timeEntryMode = timeEntryMode,
-            onTimeEntryModeChange = settings::setTimeEntryMode,
-            keyboard24Hour = keyboard24Hour,
-            onKeyboard24HourChange = settings::setKeyboard24Hour,
-            settings = settings,
-            onDismiss = { showSettings = false },
-        )
+}
+
+/** The gear in the top bar of every tab; opens the [SettingsDialog]. */
+@Composable
+internal fun SettingsButton(settings: AppSettings) {
+    // Saveable, so the open dialog survives rotating the phone.
+    var showSettings by rememberSaveable { mutableStateOf(false) }
+    IconButton(onClick = { showSettings = true }) {
+        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
     }
+    if (showSettings) SettingsDialog(settings, onDismiss = { showSettings = false })
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SettingsDialog(
-    timeEntryMode: TimeEntryMode,
-    onTimeEntryModeChange: (TimeEntryMode) -> Unit,
-    keyboard24Hour: Boolean,
-    onKeyboard24HourChange: (Boolean) -> Unit,
-    settings: AppSettings,
-    onDismiss: () -> Unit,
-) {
+private fun SettingsDialog(settings: AppSettings, onDismiss: () -> Unit) {
     val context = LocalContext.current
+    val timeEntryMode by settings.timeEntryMode.collectAsStateWithLifecycle()
+    val keyboard24Hour by settings.keyboard24Hour.collectAsStateWithLifecycle()
     val alarmSoundUri by settings.alarmSoundUri.collectAsStateWithLifecycle()
     val soundTitle = remember(alarmSoundUri) { AlarmSound.title(context, alarmSoundUri) }
     val snoozeMinutes by settings.snoozeMinutes.collectAsStateWithLifecycle()
@@ -407,13 +400,13 @@ private fun SettingsDialog(
                 RadioOptions(
                     listOf(TimeEntryMode.DIAL to R.string.time_entry_dial, TimeEntryMode.KEYBOARD to R.string.time_entry_keyboard),
                     selected = timeEntryMode,
-                    onSelect = onTimeEntryModeChange,
+                    onSelect = settings::setTimeEntryMode,
                 )
                 // Only meaningful for typed times, so it's greyed out while the dial is chosen.
                 SwitchRow(
                     R.string.keyboard_24_hour,
                     checked = keyboard24Hour,
-                    onCheckedChange = onKeyboard24HourChange,
+                    onCheckedChange = settings::setKeyboard24Hour,
                     enabled = timeEntryMode == TimeEntryMode.KEYBOARD,
                     modifier = Modifier.padding(start = 36.dp),
                 )

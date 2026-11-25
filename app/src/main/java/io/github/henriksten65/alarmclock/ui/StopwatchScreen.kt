@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import io.github.henriksten65.alarmclock.AppSettings
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -68,7 +69,12 @@ fun StopwatchScreen(modifier: Modifier = Modifier) {
 
     Scaffold(
         modifier = modifier,
-        topBar = { TopAppBar(title = { Text(stringResource(R.string.stopwatch)) }) },
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.stopwatch)) },
+                actions = { SettingsButton(AppSettings.getInstance(LocalContext.current)) },
+            )
+        },
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             LazyColumn(

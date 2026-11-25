@@ -134,6 +134,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                             Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_timer))
                         }
                     }
+                    SettingsButton(AppSettings.getInstance(context))
                 },
             )
         },
