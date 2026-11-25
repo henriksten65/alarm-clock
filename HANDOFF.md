@@ -31,11 +31,11 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 3.4** (`versionCode 20`), tagged `v3.4`: lint fixes and patch upgrades (Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1); no user-visible changes.
 - **Version 3.5** (`versionCode 21`), tagged `v3.5`: Compose BOM 2026.11.01, compileSdk 37.1; lint clean; no user-visible changes.
 - **Version 3.6** (`versionCode 22`), tagged `v3.6`: Stopwatch tab (one stopwatch, laps, count-up notification; `Stopwatch.kt`, `StopwatchReceiver.kt`, `ui/StopwatchScreen.kt`); 231 tests.
-- **After 3.6 (no version bump yet):** Settings → **Number keypad** (Calculator 7 8 9 on top, **the default** (user's
-  choice 2026-11-25) / Phone 1 2 3 on top;
-  `AppSettings.keypadLayout`, `KeypadLayout`; shared `ui/Keypad.kt`). Timer keypad follows it; with Calculator the
-  typed-time dialog shows the app keypad instead of the IME (read-only display + hardware keys via `onPreviewKeyEvent`;
-  in windows < 480 dp high the keypad sits beside the time, no title, platform width off, max 520 dp); 237 tests.
+- **Version 3.7** (`versionCode 23`), tagged `v3.7`: Settings → **Number keypad** (Calculator 7 8 9 on top, **the default**
+  (user's choice 2026-11-25) / Phone 1 2 3 on top; `AppSettings.keypadLayout`, `KeypadLayout`; shared `ui/Keypad.kt`).
+  Timer keypad follows it; with Calculator the typed-time dialog shows the app keypad instead of the IME (read-only
+  display + hardware keys via `onPreviewKeyEvent`; in windows < 480 dp high the keypad sits beside the time, no title,
+  platform width off, max 520 dp). Plus the rotation fix (dialogs/typed text kept, see §5); 239 tests.
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.6` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
@@ -63,6 +63,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v3.4` | **Maintenance**: lint warnings fixed (toUri, mipmap-anydpi, InlinedApi note); Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1. Compose BOM kept (2026.11.01 needs compileSdk 37.1) |
   | `v3.5` | **Compose upgrade**: Compose BOM 2026.11.01, compileSdk 37.1 (`android-37.1` installed by the user); lint shows no warnings |
   | `v3.6` | **Stopwatch tab**: one stopwatch with Start/Lap/Pause/Resume/Reset, hundredths, laps (lap time + total, newest first), count-up notification with buttons; survives updates, clock changes and reboots |
+  | `v3.7` | **Number keypad** setting (calculator layout by default, app keypad in the typed-time dialog); rotating keeps open dialogs and typed text |
   | `v3.1` | New alarm with Keyboard time entry opens on the typed-time dialog with the keypad up (`mkalarm.sh` no longer taps the time) |
   | `v3.0` | **Timer** tab (keypad entry, Pause/Resume/+1 min/Reset, countdown notification in the status bar, rings like an alarm) |
   | `v2.10` | **Upcoming alarm** notification from 2 h before (status-bar icon, Dismiss skips that ring) |
