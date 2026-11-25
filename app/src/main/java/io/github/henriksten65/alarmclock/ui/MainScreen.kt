@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -23,7 +24,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import io.github.henriksten65.alarmclock.AlarmRepository
 import io.github.henriksten65.alarmclock.AppSettings
 import io.github.henriksten65.alarmclock.R
@@ -57,24 +57,14 @@ fun MainScreen(
         }
     }
 
-    if (windowHeight < 480.dp) {
-        Row(Modifier.fillMaxSize()) {
-            NavigationRail {
-                Tab.entries.forEach { t ->
-                    NavigationRailItem(
-                        selected = t == tab,
-                        onClick = { onTabChange(t) },
-                        icon = { Icon(painterResource(t.icon), contentDescription = null) },
-                        label = { Text(stringResource(t.label)) },
-                    )
-                }
-            }
-            content(Modifier.consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Start)))
-        }
-    } else {
-        Scaffold(
-            contentWindowInsets = WindowInsets(0),
-            bottomBar = {
+    // One layout tree for both: only the bar or the rail is switched. The tab's screen stays at the
+    // same place in the composition, so its saved state (open dialogs, typed text) has the same keys
+    // in portrait and landscape and survives rotating. (Separate Row/Scaffold trees lost it.)
+    val short = windowHeight < SHORT_WINDOW_HEIGHT
+    Scaffold(
+        contentWindowInsets = WindowInsets(0),
+        bottomBar = {
+            if (!short) {
                 NavigationBar {
                     Tab.entries.forEach { t ->
                         NavigationBarItem(
@@ -85,10 +75,27 @@ fun MainScreen(
                         )
                     }
                 }
-            },
-        ) { padding ->
-            Box(Modifier.fillMaxSize()) {
-                content(Modifier.padding(padding).consumeWindowInsets(padding))
+            }
+        },
+    ) { padding ->
+        Row(Modifier.fillMaxSize()) {
+            if (short) {
+                NavigationRail {
+                    Tab.entries.forEach { t ->
+                        NavigationRailItem(
+                            selected = t == tab,
+                            onClick = { onTabChange(t) },
+                            icon = { Icon(painterResource(t.icon), contentDescription = null) },
+                            label = { Text(stringResource(t.label)) },
+                        )
+                    }
+                }
+            }
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                content(
+                    if (short) Modifier.consumeWindowInsets(WindowInsets.safeDrawing.only(WindowInsetsSides.Start))
+                    else Modifier.padding(padding).consumeWindowInsets(padding),
+                )
             }
         }
     }

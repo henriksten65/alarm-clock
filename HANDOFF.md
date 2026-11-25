@@ -226,6 +226,10 @@ Manifest: `AlarmReceiver`, `BootReceiver`, `AlarmService` and `RingActivity` are
   Not `setAlarmClock` (that would show the timer as the phone's "next alarm"); the timer notification
   is a plain ongoing notification, not a foreground service (Android 14+ lets users swipe it away;
   the timer keeps running).
+- **One composition tree for both orientations** (`MainScreen`, fixed 2026-11-25): only the NavigationBar
+  (Scaffold `bottomBar`) or the NavigationRail (first child of a `Row`) is switched; the tab's screen is always
+  at the same place. Separate `Row`/`Scaffold` trees gave different `rememberSaveable` keys per orientation, so
+  rotating closed open dialogs and rotating back resurrected older state. `RotationTest` guards this.
 - **Back on the ring screen** is consumed while ringing (hint toast); Home is still allowed.
 
 ## 6. Rejected approaches (don't retry these)
@@ -318,10 +322,6 @@ Tools used:
 - **When the phone is unlocked and in use**, Android shows the alarm as a heads-up
   notification instead of opening the ring screen (platform behaviour; the user was told).
   Also cosmetic: the heads-up notification overlaps the top of the ring screen.
-- **Rotation between portrait and landscape loses open dialogs** (found 2026-11-25, also in 3.6, not yet fixed):
-  rotating with the edit/typed-time dialog open closes it, and rotating back can resurrect an older dialog state
-  (e.g. a time typed earlier). Likely cause: `MainScreen` switches NavigationBar ↔ NavigationRail, so the
-  `rememberSaveable` keys in `AlarmListScreen` differ per orientation. Same-orientation recreation is fine.
 - **Appearance is Compose-only:** the window background before Compose draws, and all
   notifications (incl. the heads-up alarm), still follow the phone's theme. Not noticeable so far.
 - Remaining lint (harmless): `UseKtx` (`Uri.parse` in `AlarmService`, `AlarmSound`),

@@ -173,7 +173,7 @@ Console if you ever publish it.
 
 ## Automated tests
 
-`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 237 tests on the
+`./gradlew testDebugUnitTest` (with `JAVA_HOME=<android-studio>/jbr`, see above) runs 239 tests on the
 JVM in about 15 seconds — no device or emulator needed. Report: `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 | Test class | Covers |
@@ -191,6 +191,7 @@ JVM in about 15 seconds — no device or emulator needed. Report: `app/build/rep
 | `ReceiversTest` | alarm fired, Snooze/Dismiss actions, boot/update/time-change broadcasts |
 | `AlarmServiceTest` | ringing notification, sound fallback chain, vibration, auto-stop + missed-alarm/timer notification, a ring taken over by another |
 | `AlarmHealthTest` | warning-banner checks (notifications, volume, Do Not Disturb) |
+| `ui/RotationTest` | rotating between tab bar (portrait) and rail (landscape) keeps typed text |
 | `RingActivityTest` | ring screen: Dismiss, Snooze, Back while ringing, closing when the alarm stops |
 | `ui/AlarmListScreenTest`, `ui/KeyboardTimeDialogTest`, `ui/DaySelectorTest` | the screens, driven like a user (add/edit/delete/undo, skip, banners, settings, the calculator keypad in the time dialog) |
 | `TranslationsTest` | every language has every string with the same placeholders and plural forms; all strings format at runtime |
