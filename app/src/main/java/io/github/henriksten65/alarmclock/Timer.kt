@@ -157,6 +157,23 @@ object Timer {
         store(context, _timers.value.filterNot { it.id == id })
     }
 
+    /**
+     * Changes the set time and label of a timer that isn't running or ringing. A paused timer is
+     * reset to the new time (not started).
+     */
+    fun edit(context: Context, id: Int, durationMillis: Long, label: String) {
+        val state = get(context, id) ?: return
+        if (!isEditable(state)) return
+        val duration = durationMillis.coerceIn(1_000L, MAX_MILLIS)
+        save(
+            context,
+            state.copy(label = label.trim(), durationMillis = duration, status = TimerStatus.IDLE, totalMillis = 0L, remainingMillis = 0L),
+        )
+    }
+
+    /** Whether [edit] may change the timer: not while it runs or rings. */
+    fun isEditable(state: TimerState) = state.status != TimerStatus.RUNNING && !isRinging(state.id)
+
     fun setLabel(context: Context, id: Int, label: String) {
         val state = get(context, id) ?: return
         save(context, state.copy(label = label.trim()))

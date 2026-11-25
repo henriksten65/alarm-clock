@@ -127,6 +127,8 @@
     <string name="minutes_unit">m</string>
     <string name="seconds_unit">s</string>
     <string name="new_timer">Nuevo temporizador</string>
+    <string name="edit_timer">Editar temporizador</string>
+    <string name="edit_named_timer">Editar %1$s</string>
     <string name="add_timer">Añadir temporizador</string>
     <string name="add_label">Añadir etiqueta</string>
     <string name="timer_name">Temporizador %1$s</string>

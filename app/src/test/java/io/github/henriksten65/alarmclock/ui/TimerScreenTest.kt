@@ -129,6 +129,39 @@ class TimerScreenTest {
     private fun timers() = Timer.timers(context).value
 
     @Test
+    fun editAStoppedTimer() {
+        Timer.add(context, 5 * 60_000L, "Eggs")
+        Timer.reset(context, 1)
+        showTimer()
+        compose.onNodeWithContentDescription("Edit Eggs timer").performClick()
+        settle()
+        compose.onNodeWithText("Edit timer").assertExists()
+        compose.onNodeWithText("00h  05m  00s").assertExists()
+        compose.onNode(hasSetTextAction() and hasText("Eggs")).performTextReplacement("Tea")
+        tap("3"); tap("0"); tap("0")
+        tap("Save")
+        assertEquals(3 * 60_000L, timers().single().durationMillis)
+        assertEquals("Tea", timers().single().label)
+        assertEquals(TimerStatus.IDLE, timers().single().status)
+        compose.onNodeWithText("3:00").assertExists()
+    }
+
+    @Test
+    fun runningTimersHaveNoEditButton() {
+        Timer.add(context, 5 * 60_000L, "Eggs")
+        showTimer()
+        compose.onNodeWithContentDescription("Edit Eggs timer").assertDoesNotExist()
+        compose.onNodeWithText("Pause").performClick()
+        settle()
+        compose.onNodeWithContentDescription("Edit Eggs timer").performClick()
+        settle()
+        compose.onNodeWithContentDescription("Cancel").performClick()
+        settle()
+        compose.onNodeWithText("Edit timer").assertDoesNotExist()
+        assertEquals(TimerStatus.PAUSED, timers().single().status)
+    }
+
+    @Test
     fun startPauseResumeResetOnTheTimersCard() {
         showTimer()
         compose.onNode(hasSetTextAction() and hasText("Label")).performTextInput("Eggs")

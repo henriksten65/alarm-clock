@@ -63,7 +63,9 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   1 min 30 s; the last time used is shown and typing replaces it), add a label if you like, then
   **Start**. Each timer is a card with a progress ring, **Pause/Resume**, **+1 min** and **Reset**;
   **+** adds another timer, tapping the label changes it, and **×** deletes the timer. A finished or
-  reset timer stays in the list with its time and a **Start** button. While a timer runs, the status
+  reset timer stays in the list with its time and a **Start** button. A timer that isn't running
+  (finished, reset or paused) can be **edited** with the pencil or by tapping its time: the keypad
+  screen with its time and label, and **Save** (a paused timer is reset to the new time). While a timer runs, the status
   bar shows a timer icon and a live countdown notification per timer ("Eggs", or "Eggs paused ·
   4:32") with the same buttons. When one ends it rings like an alarm (sound, vibration, ring screen
   over the lock screen: "Time's up: Eggs") with **Stop** and **+1 min**; if another timer or alarm

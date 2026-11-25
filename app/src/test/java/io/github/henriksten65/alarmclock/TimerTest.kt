@@ -65,6 +65,36 @@ class TimerTest {
     private fun setBootCount(n: Int) = Settings.Global.putInt(context.contentResolver, Settings.Global.BOOT_COUNT, n)
 
     @Test
+    fun editChangesTimeAndLabelOfAStoppedTimer() {
+        Timer.add(context, 5 * minute, "Eggs")
+        Timer.reset(context, 1)
+        Timer.edit(context, 1, 7 * minute, " Tea ")
+        assertEquals(7 * minute, state().durationMillis)
+        assertEquals("Tea", state().label)
+        assertEquals(TimerStatus.IDLE, state().status)
+        Timer.start(context, 1)
+        assertEquals(elapsed() + 7 * minute, TestSupport.timerAlarm(1)!!.triggerAtMs)
+    }
+
+    @Test
+    fun editingAPausedTimerResetsItToTheNewTime() {
+        Timer.add(context, 5 * minute)
+        Timer.pause(context, 1)
+        Timer.edit(context, 1, 2 * minute, "")
+        assertEquals(TimerStatus.IDLE, state().status)
+        assertEquals(2 * minute, state().remaining())
+        assertNull(notification())
+    }
+
+    @Test
+    fun aRunningTimerCantBeEdited() {
+        Timer.add(context, 5 * minute)
+        Timer.edit(context, 1, 2 * minute, "X")
+        assertEquals(5 * minute, state().durationMillis)
+        assertEquals(TimerStatus.RUNNING, state().status)
+    }
+
+    @Test
     fun addStartsATimerWithAnExactAlarmOnElapsedTime() {
         val before = elapsed()
         val id = Timer.add(context, 5 * minute, "  Eggs ")

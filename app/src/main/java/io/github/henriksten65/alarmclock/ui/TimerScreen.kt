@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,6 +55,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -108,9 +110,16 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 
     // The keypad for a new timer: on its own when there are no timers, otherwise after "Add timer".
     var adding by rememberSaveable { mutableStateOf(false) }
-    val showEntry = adding || timers.isEmpty()
+    // The timer being edited (same screen as a new one, with its time and label), or null.
+    var editing by rememberSaveable { mutableStateOf<Int?>(null) }
+    val editedTimer = editing?.let { id -> timers.firstOrNull { it.id == id } }
+    // Started (e.g. Resume in the notification), ringing or deleted meanwhile: no more editing.
+    val editable = editedTimer != null && Timer.isEditable(editedTimer) && editedTimer.id != ringingTimerId
+    LaunchedEffect(editing, editable) { if (editing != null && !editable) editing = null }
+    val showEntry = adding || editable || timers.isEmpty()
     val canCancel = showEntry && timers.isNotEmpty()
-    BackHandler(enabled = canCancel) { adding = false }
+    val closeEntry = { adding = false; editing = null }
+    BackHandler(enabled = canCancel) { closeEntry() }
 
     var renaming by rememberSaveable { mutableStateOf<Int?>(null) }
 
@@ -120,10 +129,12 @@ fun TimerScreen(modifier: Modifier = Modifier) {
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(if (canCancel) R.string.new_timer else R.string.timer)) },
+                title = {
+                    Text(stringResource(if (editable) R.string.edit_timer else if (canCancel) R.string.new_timer else R.string.timer))
+                },
                 navigationIcon = {
                     if (canCancel) {
-                        IconButton(onClick = { adding = false }) {
+                        IconButton(onClick = closeEntry) {
                             Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cancel))
                         }
                     }
@@ -153,11 +164,25 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                 .verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter,
         ) {
-            if (showEntry) {
+            if (showEntry && editable && editedTimer != null) {
+                // Keyed, so its typed digits and label are its own, not a new timer's.
+                key(editedTimer.id) {
+                    TimerEntry(
+                        initialMillis = editedTimer.durationMillis,
+                        initialLabel = editedTimer.label,
+                        confirmRes = R.string.save,
+                        keypadLayout = keypadLayout,
+                        onConfirm = { millis, label ->
+                            Timer.edit(context, editedTimer.id, millis, label)
+                            editing = null
+                        },
+                    )
+                }
+            } else if (showEntry) {
                 TimerEntry(
                     initialMillis = lastDuration,
                     keypadLayout = keypadLayout,
-                    onStart = { millis, label ->
+                    onConfirm = { millis, label ->
                         Timer.add(context, millis, label)
                         adding = false
                     },
@@ -167,6 +192,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
                     timers = timers,
                     ringingTimerId = ringingTimerId,
                     onRename = { renaming = it },
+                    onEdit = { editing = it },
                 )
             }
         }
@@ -190,7 +216,7 @@ fun TimerScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TimerList(timers: List<TimerState>, ringingTimerId: Int?, onRename: (Int) -> Unit) {
+private fun TimerList(timers: List<TimerState>, ringingTimerId: Int?, onRename: (Int) -> Unit, onEdit: (Int) -> Unit) {
     val context = LocalContext.current
     // One clock for all cards, ticking while any timer runs.
     val nowElapsed = rememberElapsedNow(ticking = timers.any { it.status == TimerStatus.RUNNING }, intervalMillis = 100)
@@ -208,6 +234,7 @@ private fun TimerList(timers: List<TimerState>, ringingTimerId: Int?, onRename: 
                 nowElapsed = nowElapsed,
                 ringing = timer.id == ringingTimerId,
                 onRename = { onRename(timer.id) },
+                onEdit = { onEdit(timer.id) }.takeIf { Timer.isEditable(timer) && timer.id != ringingTimerId },
                 onStart = { Timer.start(context, timer.id) },
                 onPause = { Timer.pause(context, timer.id) },
                 onResume = { Timer.resume(context, timer.id) },
@@ -227,6 +254,7 @@ private fun TimerCard(
     nowElapsed: Long,
     ringing: Boolean,
     onRename: () -> Unit,
+    onEdit: (() -> Unit)?,
     onStart: () -> Unit,
     onPause: () -> Unit,
     onResume: () -> Unit,
@@ -257,6 +285,12 @@ private fun TimerCard(
                         .clickable(onClickLabel = stringResource(R.string.label), onClick = onRename)
                         .padding(vertical = 12.dp),
                 )
+                // Only while the timer isn't running or ringing; tapping the time does the same.
+                if (onEdit != null) {
+                    IconButton(onClick = onEdit) {
+                        Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.edit_named_timer, timerName))
+                    }
+                }
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.delete_named_alarm, timerName))
                 }
@@ -278,7 +312,16 @@ private fun TimerCard(
                     )
                 }
                 Spacer(Modifier.width(16.dp))
-                Column {
+                Column(
+                    if (onEdit != null) {
+                        Modifier
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable(onClickLabel = stringResource(R.string.edit_timer), onClick = onEdit)
+                            .padding(horizontal = 4.dp)
+                    } else {
+                        Modifier
+                    },
+                ) {
                     Text(
                         if (ringing) stringResource(R.string.times_up) else formatDuration(remaining),
                         style = MaterialTheme.typography.displaySmall,
@@ -350,11 +393,17 @@ internal fun LabelDialog(initial: String, onDismiss: () -> Unit, onConfirm: (Str
 }
 
 @Composable
-private fun TimerEntry(initialMillis: Long, keypadLayout: KeypadLayout, onStart: (millis: Long, label: String) -> Unit) {
-    // Shows the last time used; typing replaces it (like the typed alarm time).
+private fun TimerEntry(
+    initialMillis: Long,
+    keypadLayout: KeypadLayout,
+    initialLabel: String = "",
+    confirmRes: Int = R.string.start,
+    onConfirm: (millis: Long, label: String) -> Unit,
+) {
+    // Shows the last time used (or the edited timer's); typing replaces it (like the typed alarm time).
     var digits by rememberSaveable { mutableStateOf(millisToTimerDigits(initialMillis)) }
     var replaceOnType by rememberSaveable { mutableStateOf(true) }
-    var label by rememberSaveable { mutableStateOf("") }
+    var label by rememberSaveable { mutableStateOf(initialLabel) }
     val millis = timerDigitsToMillis(digits)
 
     fun type(key: String) {
@@ -386,10 +435,10 @@ private fun TimerEntry(initialMillis: Long, keypadLayout: KeypadLayout, onStart:
         }
         val start = @Composable {
             Button(
-                onClick = { onStart(millis, label) },
+                onClick = { onConfirm(millis, label) },
                 enabled = millis > 0,
                 modifier = Modifier.widthIn(min = 200.dp).height(56.dp),
-            ) { Text(stringResource(R.string.start), style = MaterialTheme.typography.titleMedium) }
+            ) { Text(stringResource(confirmRes), style = MaterialTheme.typography.titleMedium) }
         }
         val keypad = @Composable { Keypad(keySize, keypadLayout, ::type, ::backspace) }
         if (wide) {

@@ -124,6 +124,8 @@
     <string name="minutes_unit">m</string>
     <string name="seconds_unit">s</string>
     <string name="new_timer">New timer</string>
+    <string name="edit_timer">Edit timer</string>
+    <string name="edit_named_timer">Edit %1$s</string>
     <string name="add_timer">Add timer</string>
     <string name="add_label">Add label</string>
     <string name="timer_name">%1$s timer</string>
