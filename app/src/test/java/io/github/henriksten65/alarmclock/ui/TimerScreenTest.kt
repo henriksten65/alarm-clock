@@ -89,8 +89,7 @@ class TimerScreenTest {
     @Test
     fun calculatorLayoutPuts789OnTop() {
         val top = { key: String -> compose.onNodeWithText(key).getBoundsInRoot().top }
-        TestSupport.settings.setKeypadLayout(KeypadLayout.CALCULATOR)
-        showTimer()
+        showTimer() // the default layout
         assertTrue(top("7") < top("4"))
         assertTrue(top("4") < top("1"))
         assertTrue(top("1") < top("0"))
@@ -101,6 +100,7 @@ class TimerScreenTest {
     @Test
     fun phoneLayoutPuts123OnTop() {
         val top = { key: String -> compose.onNodeWithText(key).getBoundsInRoot().top }
+        TestSupport.settings.setKeypadLayout(KeypadLayout.PHONE)
         showTimer()
         assertTrue(top("1") < top("4"))
         assertTrue(top("4") < top("7"))

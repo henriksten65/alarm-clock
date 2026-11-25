@@ -17,11 +17,11 @@ enum class TimeEntryMode {
 
 /** Order of the digit rows on the app's number keypads (Timer, typed alarm times). */
 enum class KeypadLayout {
+    /** Like a calculator: 7 8 9 on the top row. The default. */
+    CALCULATOR,
+
     /** Like a phone: 1 2 3 on the top row. */
     PHONE,
-
-    /** Like a calculator: 7 8 9 on the top row. */
-    CALCULATOR,
 }
 
 /** Light or dark colours for the app's screens. */
@@ -98,7 +98,7 @@ class AppSettings private constructor(context: Context) {
     private val _keypadLayout = MutableStateFlow(
         prefs.getString(KEY_KEYPAD_LAYOUT, null)
             ?.let { name -> KeypadLayout.entries.firstOrNull { it.name == name } }
-            ?: KeypadLayout.PHONE,
+            ?: KeypadLayout.CALCULATOR,
     )
     val keypadLayout: StateFlow<KeypadLayout> = _keypadLayout.asStateFlow()
 

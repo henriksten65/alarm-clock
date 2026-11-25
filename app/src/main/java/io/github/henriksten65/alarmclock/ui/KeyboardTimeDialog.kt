@@ -73,7 +73,7 @@ fun KeyboardTimeDialog(
     initialHour: Int,
     initialMinute: Int,
     force24Hour: Boolean,
-    keypadLayout: KeypadLayout = KeypadLayout.PHONE,
+    keypadLayout: KeypadLayout = KeypadLayout.CALCULATOR,
     onDismiss: () -> Unit,
     onConfirm: (hour: Int, minute: Int) -> Unit,
 ) {

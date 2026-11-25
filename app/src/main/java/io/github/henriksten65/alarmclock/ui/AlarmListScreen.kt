@@ -482,8 +482,8 @@ private fun SettingsDialog(
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                     listOf(
-                        KeypadLayout.PHONE to R.string.keypad_phone,
                         KeypadLayout.CALCULATOR to R.string.keypad_calculator,
+                        KeypadLayout.PHONE to R.string.keypad_phone,
                     ).forEach { (layout, labelRes) ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,

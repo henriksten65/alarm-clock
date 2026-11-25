@@ -73,15 +73,15 @@ class AppSettingsTest {
     }
 
     @Test
-    fun keypadLayoutDefaultsToPhoneAndIsKept() {
-        assertEquals(KeypadLayout.PHONE, TestSupport.settings.keypadLayout.value)
-        TestSupport.settings.setKeypadLayout(KeypadLayout.CALCULATOR)
-        TestSupport.restartProcess()
+    fun keypadLayoutDefaultsToCalculatorAndIsKept() {
         assertEquals(KeypadLayout.CALCULATOR, TestSupport.settings.keypadLayout.value)
+        TestSupport.settings.setKeypadLayout(KeypadLayout.PHONE)
+        TestSupport.restartProcess()
+        assertEquals(KeypadLayout.PHONE, TestSupport.settings.keypadLayout.value)
 
         deviceProtectedPrefs(TestSupport.context, "settings").edit().putString("keypad_layout", "ABACUS").commit()
         TestSupport.restartProcess()
-        assertEquals(KeypadLayout.PHONE, TestSupport.settings.keypadLayout.value)
+        assertEquals(KeypadLayout.CALCULATOR, TestSupport.settings.keypadLayout.value)
     }
 
     @Test

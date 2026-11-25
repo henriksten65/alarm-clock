@@ -110,6 +110,8 @@ class KeyboardTimeDialogTest {
         compose.onNodeWithText("PM").assertDoesNotExist()
     }
 
+    // Most tests here use the phone's keyboard (show()'s default), which types into a text field.
+
     @Test
     fun phoneLayoutUsesThePhoneKeyboard() {
         show(7, 30, force24Hour = true)

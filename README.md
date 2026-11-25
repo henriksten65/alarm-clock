@@ -14,8 +14,8 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   with an AM/PM switch on 12-hour phones); a new alarm then opens straight on the typed time with the
   keypad showing. The **Typed times use 24-hour clock** switch makes
   typed digits always 24-hour (no AM/PM), whatever the phone's time format
-- Settings → **Number keypad**: **Phone** (1 2 3 on the top row, the default) or **Calculator**
-  (7 8 9 on the top row). It sets the Timer keypad. For typed alarm times, Calculator shows the
+- Settings → **Number keypad**: **Calculator** (7 8 9 on the top row, the default) or **Phone**
+  (1 2 3 on the top row). It sets the Timer keypad. For typed alarm times, Calculator shows the
   app's own keypad in the time dialog instead of the phone's keyboard (whose layout an app can't
   change); a hardware keyboard still works there. In landscape the keypad sits beside the time
 - Settings → **Alarm sound**: one of the phone's alarm sounds (system sound picker) or any audio

@@ -31,7 +31,8 @@ asks for features one at a time, tests them in the emulator, and then says
 - **Version 3.4** (`versionCode 20`), tagged `v3.4`: lint fixes and patch upgrades (Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1); no user-visible changes.
 - **Version 3.5** (`versionCode 21`), tagged `v3.5`: Compose BOM 2026.11.01, compileSdk 37.1; lint clean; no user-visible changes.
 - **Version 3.6** (`versionCode 22`), tagged `v3.6`: Stopwatch tab (one stopwatch, laps, count-up notification; `Stopwatch.kt`, `StopwatchReceiver.kt`, `ui/StopwatchScreen.kt`); 231 tests.
-- **After 3.6 (uncommitted version bump):** Settings → **Number keypad** (Phone 1 2 3 on top / Calculator 7 8 9 on top;
+- **After 3.6 (no version bump yet):** Settings → **Number keypad** (Calculator 7 8 9 on top, **the default** (user's
+  choice 2026-11-25) / Phone 1 2 3 on top;
   `AppSettings.keypadLayout`, `KeypadLayout`; shared `ui/Keypad.kt`). Timer keypad follows it; with Calculator the
   typed-time dialog shows the app keypad instead of the IME (read-only display + hardware keys via `onPreviewKeyEvent`;
   in windows < 480 dp high the keypad sits beside the time, no title, platform width off, max 520 dp); 237 tests.
