@@ -66,25 +66,36 @@ class MainActivity : ComponentActivity() {
         // Only on a fresh start: during a rotation an "Undo" for a deleted alarm may still be showing.
         if (savedInstanceState == null) AlarmSound.releaseUnused(this)
 
-        // The tab from before a rotation, or the one asked for (the timer and stopwatch notifications open their tabs).
-        tab = savedInstanceState?.getString(KEY_TAB)?.let { Tab.valueOf(it) } ?: tabFrom(intent) ?: Tab.ALARMS
+        // The tab from before a rotation, or the one asked for (the timer and stopwatch notifications open their
+        // tabs), or else the one the app was last on.
+        showTab(
+            savedInstanceState?.getString(KEY_TAB)?.let { Tab.valueOf(it) } ?: tabFrom(intent)
+                ?: AppSettings.getInstance(this).lastTab?.let { name -> Tab.entries.firstOrNull { it.name == name } }
+                ?: Tab.ALARMS,
+        )
 
         val repository = AlarmRepository.getInstance(this)
         setContent {
             AlarmClockTheme {
-                MainScreen(repository, AppSettings.getInstance(this), tab, onTabChange = { tab = it })
+                MainScreen(repository, AppSettings.getInstance(this), tab, onTabChange = ::showTab)
             }
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        tabFrom(intent)?.let { tab = it }
+        tabFrom(intent)?.let(::showTab)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString(KEY_TAB, tab.name)
+    }
+
+    /** Switches to [newTab] and remembers it for the next time the app opens. */
+    private fun showTab(newTab: Tab) {
+        tab = newTab
+        AppSettings.getInstance(this).lastTab = newTab.name
     }
 
     private fun tabFrom(intent: Intent?): Tab? = when (intent?.getStringExtra(EXTRA_TAB)) {

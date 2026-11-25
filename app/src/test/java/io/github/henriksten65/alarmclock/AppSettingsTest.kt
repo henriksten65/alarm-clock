@@ -58,6 +58,14 @@ class AppSettingsTest {
     }
 
     @Test
+    fun lastTabIsKept() {
+        assertNull(TestSupport.settings.lastTab)
+        TestSupport.settings.lastTab = "STOPWATCH"
+        TestSupport.restartProcess()
+        assertEquals("STOPWATCH", TestSupport.settings.lastTab)
+    }
+
+    @Test
     fun soundCanBeResetToTheDefault() {
         TestSupport.settings.setAlarmSoundUri("content://media/audio/5")
         TestSupport.settings.setAlarmSoundUri(null)

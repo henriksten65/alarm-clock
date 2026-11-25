@@ -116,6 +116,11 @@ class AppSettings private constructor(context: Context) {
         prefs.edit { putString(KEY_KEYPAD_LAYOUT, layout.name) }
     }
 
+    /** The tab (its name) the app was last on, so it opens there again; null before the first change. */
+    var lastTab: String?
+        get() = prefs.getString(KEY_LAST_TAB, null)
+        set(value) = prefs.edit { putString(KEY_LAST_TAB, value) }
+
     /** Whether the app uses light or dark colours, or follows the phone. */
     private val _themeMode = MutableStateFlow(
         prefs.getString(KEY_THEME_MODE, null)
@@ -145,6 +150,7 @@ class AppSettings private constructor(context: Context) {
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_KEYPAD_LAYOUT = "keypad_layout"
         private const val KEY_SHOW_SKIP_NEXT = "show_skip_next"
+        private const val KEY_LAST_TAB = "last_tab"
 
         @Volatile
         private var instance: AppSettings? = null
