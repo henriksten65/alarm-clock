@@ -159,7 +159,7 @@ class AlarmService : Service() {
         }
         val text = when (timerId) {
             null -> alarm?.let { formatTime(this, it.hour, it.minute) }
-            else -> Timer.get(this, timerId)?.label?.takeIf { it.isNotBlank() } ?: getString(R.string.timer)
+            else -> Timer.get(this, timerId)?.let { Timer.displayName(this, it) } ?: getString(R.string.timer)
         }
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
@@ -206,8 +206,12 @@ class AlarmService : Service() {
             when (val timerId = Timer.timerIdOf(ringId)) {
                 null -> AlarmRepository.getInstance(context).get(ringId)?.let { notifyMissed(context, it, text) }
                 else -> {
-                    val label = Timer.get(context, timerId)?.label?.trim().orEmpty()
-                    val title = if (label.isEmpty()) context.getString(R.string.missed_timer_unnamed) else context.getString(R.string.missed_timer, label)
+                    // "Missed timer: Eggs", or by its set time: "Missed timer: 5:00".
+                    val timer = Timer.get(context, timerId)
+                    val title = when {
+                        timer == null -> context.getString(R.string.missed_timer_unnamed)
+                        else -> context.getString(R.string.missed_timer, timer.label.ifBlank { formatDuration(timer.durationMillis) })
+                    }
                     postMissed(context, MISSED_TIMER_NOTIFICATION_ID_BASE + timerId, R.drawable.ic_timer, title, text)
                 }
             }

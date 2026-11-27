@@ -62,6 +62,15 @@ class RingActivityTest {
     }
 
     @Test
+    fun aTimerWithoutLabelSaysTimesUpWithItsLength() {
+        Timer.add(context, 90_000L)
+        Timer.onDone(context, 1)
+        TestSupport.setRingingAlarmId(Timer.ringId(1))
+        launch(Timer.ringId(1))
+        compose.onNodeWithText("Time's up: 1:30 timer").assertExists()
+    }
+
+    @Test
     fun followsASecondTimerThatStartsRingingWhileItShows() {
         Timer.add(context, 60_000L, "Tea")
         Timer.add(context, 60_000L, "Eggs")

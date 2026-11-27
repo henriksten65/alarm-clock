@@ -195,6 +195,10 @@ object Timer {
         }
     }
 
+    /** What a ringing or missed timer is called: its label, or its set time ("5:00 timer"). */
+    fun displayName(context: Context, state: TimerState): String =
+        state.label.ifBlank { context.getString(R.string.timer_name, formatDuration(state.durationMillis)) }
+
     fun isRinging(id: Int) = timerIdOf(AlarmService.ringingAlarmId.value) == id
 
     /** The timer's AlarmManager alarm went off: ring. */

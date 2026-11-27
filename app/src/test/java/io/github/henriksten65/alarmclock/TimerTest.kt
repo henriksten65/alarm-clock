@@ -284,6 +284,19 @@ class TimerTest {
     }
 
     @Test
+    fun ringingTimerNotificationWithoutLabelShowsTheTimersLength() {
+        Timer.add(context, minute)
+        val service = Robolectric.buildService(
+            AlarmService::class.java,
+            Intent(context, AlarmService::class.java).putExtra(EXTRA_ALARM_ID, Timer.ringId(1)),
+        ).create().startCommand(0, 1).get()
+        val n = shadowOf(service).lastForegroundNotification
+        assertEquals("Time's up", shadowOf(n).contentTitle)
+        assertEquals("1:00 timer", shadowOf(n).contentText)
+        service.onDestroy()
+    }
+
+    @Test
     fun ringingTimerNotificationSaysTimesUpWithTheLabel() {
         Timer.add(context, minute, "Eggs")
         val service = Robolectric.buildService(

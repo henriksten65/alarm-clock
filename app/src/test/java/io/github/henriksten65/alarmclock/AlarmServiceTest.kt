@@ -228,7 +228,7 @@ class AlarmServiceTest {
         start(1)
 
         val missed = notifications().filter { it.channelId == "missed_alarms" }.map { shadowOf(it) }
-        assertEquals(listOf("Missed timer: Eggs", "Missed timer"), missed.map { it.contentTitle.toString() })
+        assertEquals(listOf("Missed timer: Eggs", "Missed timer: 3:00"), missed.map { it.contentTitle.toString() })
         assertEquals(
             listOf("Stopped ringing when a timer went off", "Stopped ringing when another alarm went off"),
             missed.map { it.contentText.toString() },

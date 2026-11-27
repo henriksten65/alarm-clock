@@ -72,9 +72,9 @@ class RingActivity : ComponentActivity() {
             AlarmClockTheme {
                 val timerId = Timer.timerIdOf(alarmId)
                 if (timerId != null) {
-                    val timerLabel = Timer.get(this, timerId)?.label.orEmpty()
+                    val timer = Timer.get(this, timerId)
                     RingScreen(
-                        label = if (timerLabel.isBlank()) getString(R.string.times_up) else getString(R.string.times_up_named, timerLabel),
+                        label = timer?.let { getString(R.string.times_up_named, Timer.displayName(this, it)) } ?: getString(R.string.times_up),
                         icon = R.drawable.ic_timer,
                         dismissText = getString(R.string.stop),
                         snoozeText = getString(R.string.add_minute),
