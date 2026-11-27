@@ -68,7 +68,7 @@ A simple alarm clock app written in Kotlin with Jetpack Compose and Material 3.
   screen with its time and label, and **Save** (a paused timer is reset to the new time). While a timer runs, the status
   bar shows a timer icon and a live countdown notification per timer ("Eggs", or "Eggs paused ·
   4:32") with the same buttons. When one ends it rings like an alarm (sound, vibration, ring screen
-  over the lock screen: "Time's up: Eggs") with **Stop** and **+1 min**; if another timer or alarm
+  over the lock screen: "Time's up: Eggs", or "Time's up: 5:00 timer" without a label) with **Stop** and **+1 min**; if another timer or alarm
   ends while one rings, the newer one takes over the sound and the ring screen (the stopped one gets a
   "Missed" notification). Timers keep running
   through app updates, clock changes and reboots (a timer that ended while the phone was off rings

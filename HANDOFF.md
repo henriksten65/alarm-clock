@@ -52,6 +52,8 @@ asks for features one at a time, tests them in the emulator, and then says
   time); 259 tests.
 - **Version 3.12** (`versionCode 28`), tagged `v3.12`: Back leaves the app from every tab (no more Timer/Stopwatch →
   Alarms); the app reopens on the last used tab (`AppSettings.lastTab`); 260 tests.
+- **Version 3.13** (`versionCode 29`), tagged `v3.13`: a ringing timer without a label shows its set time
+  ("Time's up: 5:00 timer", notification "5:00 timer", "Missed timer: 5:00"; `Timer.displayName`); 262 tests.
 - GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.12` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
@@ -79,6 +81,7 @@ asks for features one at a time, tests them in the emulator, and then says
   | `v3.4` | **Maintenance**: lint warnings fixed (toUri, mipmap-anydpi, InlinedApi note); Gradle 9.9.2, AGP 9.5.2, lifecycle 2.11.1, Robolectric 4.18.1. Compose BOM kept (2026.11.01 needs compileSdk 37.1) |
   | `v3.5` | **Compose upgrade**: Compose BOM 2026.11.01, compileSdk 37.1 (`android-37.1` installed by the user); lint shows no warnings |
   | `v3.6` | **Stopwatch tab**: one stopwatch with Start/Lap/Pause/Resume/Reset, hundredths, laps (lap time + total, newest first), count-up notification with buttons; survives updates, clock changes and reboots |
+  | `v3.13` | A ringing **timer without a label shows its length** ("Time's up: 5:00 timer") |
   | `v3.12` | All tabs equal: **Back** leaves the app from any tab; the app **reopens on the last used tab** |
   | `v3.11` | **Edit timers** that aren't running (finished, reset or paused) |
   | `v3.10` | Selection highlight on pre-filled keypad digits; "Skip next" can be hidden; sound preview ▶/■; settings gear on the Timer and Stopwatch tabs |
