@@ -54,7 +54,7 @@ asks for features one at a time, tests them in the emulator, and then says
   Alarms); the app reopens on the last used tab (`AppSettings.lastTab`); 260 tests.
 - **Version 3.13** (`versionCode 29`), tagged `v3.13`: a ringing timer without a label shows its set time
   ("Time's up: 5:00 timer", notification "5:00 timer", "Missed timer: 5:00"; `Timer.displayName`); 262 tests.
-- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.12` (latest); see §3 for how they're made.
+- GitHub Releases with the signed APK exist for `v2.3`–`v2.10` and `v3.0`–`v3.13` (latest); see §3 for how they're made.
 - It builds and lints cleanly. Everything below was **tested by hand on the emulator**.
   Since 2.5 there are automated tests (now **231** (`./gradlew testDebugUnitTest`, ~15 s, JVM +
   Robolectric; see README "Automated tests" and §7).
